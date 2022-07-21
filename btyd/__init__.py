@@ -1,4 +1,3 @@
-""" All legacy lifetimes models from ./fitters/, and Bayesian models from ./models/. """
 import warnings
 
 from .fitters import BaseFitter
