@@ -10,7 +10,7 @@ from .fitters.beta_geo_covar_fitter import BetaGeoCovarsFitter
 from .models import BaseModel, PredictMixin
 from .models.beta_geo_model import BetaGeoModel
 
-__version__ = "0.1.0a1"
+__version__ = "0.1b1"
 
 __all__ = (
     "__version__",

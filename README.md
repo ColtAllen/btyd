@@ -7,7 +7,7 @@
 
 ## READ FIRST: Project Status
 
-BTYD is the successor to the [Lifetimes](https://github.com/CamDavidsonPilon/lifetimes) library for implementing Buy Till You Die and Customer Lifetime Value statistical models in Python. All existing Lifetimes functionality is supported, and Bayesian [PyMC](https://github.com/pymc-devs) model implementations are presently in an alpha stage of development.
+BTYD is the successor to the [Lifetimes](https://github.com/CamDavidsonPilon/lifetimes) library for implementing Buy Till You Die and Customer Lifetime Value statistical models in Python. All existing Lifetimes functionality is supported, and Bayesian [PyMC](https://github.com/pymc-devs) model implementations are presently in Beta.
 
 
 ## Introduction
