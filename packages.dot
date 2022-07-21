@@ -1,0 +1,6 @@
+digraph "packages" {
+rankdir=BT
+charset="utf-8"
+"btyd.models" [color="black", label="btyd.models", shape="box", style="solid"];
+"btyd.models.beta_geo_model" [color="black", label="btyd.models.beta_geo_model", shape="box", style="solid"];
+}
