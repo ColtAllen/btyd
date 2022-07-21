@@ -2,7 +2,7 @@
 
 Model persistence is helpful for saving and loading BTYD models for reuse as well as logging to a registry server such as `mlflow`. After a model has been fit, its inference data can be saved in either JSON or CSV format. The format will be inferred automatically from the filename.
 
-### Fit model
+## Fit model
 
 ```python
 from btyd import BetaGeoModel
@@ -15,7 +15,7 @@ bgm
 """<btyd.BetaGeoModel: Parameters {'alpha': 4.5, 'r': 0.2, 'a': 0.8, 'b': 2.4} estimated with 2357 customers.>"""
 ```
 
-### Saving and Loading Models
+## Saving and Loading Models
 
 
 ```python

@@ -20,6 +20,9 @@ from ..utils import _check_inputs
 SELF = TypeVar("SELF")
 
 class BaseModel(ABC, Generic[SELF]):
+    """
+    Abstract class defining all base model methods as well as methods to be overridden when creating a model subclass.
+    """
 
     # This attribute must be defined in model subclasses.
     _quantities_of_interest: dict
@@ -30,7 +33,7 @@ class BaseModel(ABC, Generic[SELF]):
 
     @abstractmethod
     def _model(self) -> None:
-        """ pymc model defining priors for model parameters and calling _log_likelihood in Potential()."""
+        """ pymc model defining priors for model parameters and wrapping _log_likelihood in Potential()."""
         pass
 
     @abstractmethod
@@ -40,10 +43,11 @@ class BaseModel(ABC, Generic[SELF]):
 
     @abstractmethod
     def generate_rfm_data(self) -> None:
+        """ Generate synthetic RFM data from parameters of fitted model. This is useful for posterior predictive checks and hyperparameter optimization. """
         pass
 
     def __repr__(self) -> str:
-        """Representation of BTYD model object."""
+        """ String representation of BTYD model object."""
         classname = self.__class__.__name__
         try:
             row_str = f"estimated with {self._frequency.shape[0]} customers."
@@ -66,14 +70,15 @@ class BaseModel(ABC, Generic[SELF]):
         rfm_df: pandas.DataFrame
             Pandas dataframe containing customer ids, frequency, recency, T and monetary value columns.
         tune: int
-            Number of beginning 'burn-in' samples for posterior parameter distribution convergence. These are discarded after model is fit.
+            Number of starting 'burn-in' samples for posterior parameter distribution convergence. These are discarded after the model is fit.
         draws: int
             Number of samples from posterior parameter distrutions after tune period. These are retained for model usage.
         
         Returns
         -------
         self
-            with ``_idata`` attribute for model evaluation and predictions.
+            Fitted model with ``_idata`` attribute for model evaluation and predictions.
+
         """
 
         self._frequency, self._recency, self._T, self._monetary_value, _ = self._dataframe_parser(rfm_df)
@@ -91,7 +96,22 @@ class BaseModel(ABC, Generic[SELF]):
         return self
     
     def _unload_params(self, posterior: bool = False, n_samples: int = 100) -> Union[Tuple[np.ndarray],Tuple[np.ndarray]]:
-        """Extract parameter posteriors from _idata InferenceData attribute of fitted model."""
+        """
+        Extract parameter posteriors from _idata InferenceData attribute of fitted model.
+        This is an internal method and not intended to be called directly.
+        
+        Parameters
+        ----------
+        posterior: bool
+            Flag for sampling from parameter posterior distribution. Default is set for point estimates.
+        n_samples: int
+        
+        Returns
+        -------
+        parameters: tuple(np.ndarray)
+            A tuple containing model parameters as numpy arrays.
+
+        """
 
         # BETA TODO: Raise BTYDException.
          # if dict(filter(lambda item: self.__class__.__name__ not in item[0], self._idata.posterior.get('data_vars').items()))
@@ -128,7 +148,30 @@ class BaseModel(ABC, Generic[SELF]):
         join_df = False 
         ) -> np.ndarray:
         """
-        Predictive API.
+        Base method for running model predictions.
+        
+        Parameters
+        ----------
+        method: str
+            Predictive quantity of interest; accepts 'cond_prob_alive', 'cond_n_prchs_to_time','n_prchs_to_time', or 'prob_n_prchs_to_time'.
+        t: int
+            Number of time periods for predictions.
+        n: int
+            Number of transactions predicted.
+        sample_posterior: bool
+            Flag for sampling from parameter posteriors. Set to 'True' to return predictive probability distributions instead of point estimates.
+        posterior_draws: int
+            Number of draws from parameter posteriors.
+        rfm_df: pandas.DataFrame
+            Dataframe containing recency, frequency, monetary value, and time period columns. Only required if model is loaded from an external file.
+        join_df: bool
+            NOT SUPPORTED IN 0.1beta1. Flag to add columns to rfm_df containing predictive outputs.
+        
+        Returns
+        -------
+        predictions: np.ndarray
+            Numpy arrays containing predictive quantities of interest.
+
         """
 
         if rfm_df is None:
@@ -165,7 +208,7 @@ class BaseModel(ABC, Generic[SELF]):
 
     def load(self, filename: str) -> SELF:
         """
-        Load InferenceData from an existing JSON into an existing model.
+        Load InferenceData from an external file. As of 0.1beta1 only JSON files are supported.
 
         Parameters
         ----------
@@ -175,7 +218,7 @@ class BaseModel(ABC, Generic[SELF]):
         Returns
         -------
         self
-            with loaded ``_idata`` attribute for model evaluation and predictions.
+            Model object containing ``_idata`` attribute for model evaluation and predictions.
         """
 
         if '.json' in filename:
@@ -195,7 +238,18 @@ class BaseModel(ABC, Generic[SELF]):
         
     @staticmethod
     def _dataframe_parser(rfm_df: pd.DataFrame) -> Tuple[np.ndarray]:
-        """ Parse input dataframe into separate RFM components. """
+        """ 
+        Parse input dataframe into separate RFM components. This is an internal method and not intended to be called directly.
+
+        Parameters
+        ----------
+        rfm_df: pandas.DataFrame
+            Dataframe containing recency, frequency, monetary value, and time period columns.
+        
+        Returns
+        -------
+            Tuple containing numpy arrays for Recency, Frequency, Monetary Value, T, and Customer ID (if provided).
+        """
 
         rfm_df.columns = rfm_df.columns.str.upper()
 
@@ -217,15 +271,31 @@ class BaseModel(ABC, Generic[SELF]):
 
     @staticmethod
     def _sample(param_array: array_like, n_samples: int) -> np.ndarray:
-        """Utility function for sampling from parameter posteriors."""
+        """
+        Utility function for sampling from parameter posteriors. This is an internal method and not intended to be called directly.
+        
+        Parameters
+        ----------
+        param_array: array_like
+            Array containing names of model parameters for sampling.
+        n_samples: int
+            Number of draws from parameter posterior distributions.
+
+        Returns
+        -------
+            Numpy array of parameter samples for building predictive probability distributions.
+
+        """
         rng = np.random.default_rng()
         return rng.choice(param_array, n_samples, replace=True)
 
 
 class PredictMixin(ABC, Generic[SELF]):
     """
-    Define predictive methods for all models except GammaGamma.
+    Abstract class defining predictive methods for all models except GammaGamma.
     In research literature these are commonly referred to as quantities of interest.
+    These are internal methods and not intended to be called directly.
+    Docstrings for each method are provided in respective model subclass.
     """
 
     @abstractmethod

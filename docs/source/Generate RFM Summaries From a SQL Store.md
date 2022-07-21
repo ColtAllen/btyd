@@ -1,6 +1,6 @@
 # Generate RFM Summaries From a SQL Store
 
-### Example SQL statement to transform transactional data into RFM data
+## Example SQL statement to transform transactional data into RFM data
 
 Let's review what our variables mean:
 
@@ -21,7 +21,7 @@ FROM orders
 GROUP BY customer_id
 ```
 
-### Create table with RFM summary matrix with holdout
+## Create table with RFM summary matrix with holdout
 
 Variables `frequency`, `T` and `recency` have the same meaning as in previous section.
 

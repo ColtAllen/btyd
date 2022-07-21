@@ -13,7 +13,7 @@
    User Guide
    Saving and Loading Models
    Generate RFM Summaries From a SQL Store
-   btyd
+   api_reference
    Changelog
 
 
@@ -22,4 +22,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

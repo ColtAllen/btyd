@@ -23,13 +23,11 @@ from ..generate_data import beta_geometric_nbd_model
 class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
     """
     Also known as the BG/NBD model.
-    Based on [2]_, this model has the following assumptions:
-    1) Each individual, i, has a hidden lambda_i and p_i parameter
-    2) These come from a population wide Gamma and a Beta distribution
-       respectively.
-    3) Individuals purchases follow a Poisson process with rate lambda_i*t .
-    4) After each purchase, an individual has a p_i probability of dieing
-       (never buying again).
+    Based on [1]_, this model has the following assumptions:
+    1) Each individual, ``i``, has a hidden ``lambda_i`` and ``p_i`` parameter
+    2) These come from a population wide Gamma and a Beta distribution respectively.
+    3) Individuals purchases follow a Poisson process with rate :math:`\lambda_i*t` .
+    4) After each purchase, an individual has a ``p_i`` probability of dieing (never buying again).
     
     Parameters
     ----------
@@ -38,22 +36,33 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
     Attributes
     ----------
-    params_: :obj: Series
-        The fitted parameters of the model
-    data: :obj: DataFrame
-        A DataFrame with the values given in the call to `fit`
-    attr_name : datatype
-        Add description here.
+    _hyperparams: dict
+        Hyperparameters of prior parameter distributions for model fitting.
+    _param_list: list
+        List of estimated model parameters.
+    _model: pymc.Model
+        Hierarchical Bayesian model to estimate model parameters.
+    _idata: ArViZ.InferenceData
+        InferenceData object of fitted or loaded model. Used for predictions as well as evaluation plots, and model metrics via the ArViZ library.
         
     References
     ----------
-    .. [2] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
+    .. [1] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
        "Counting Your Customers the Easy Way: An Alternative to the
        Pareto/NBD Model," Marketing Science, 24 (2), 275-84.
 
     """
 
     def __init__(self, hyperparams: Dict[float] = None) -> SELF:
+        """
+        Instantiate new model with custom hyperparameters if desired.
+
+        Parameters
+        ----------
+        hyperparams: dict
+            Dict containing model hyperparameters for parameter prior probability distributions.
+
+        """
 
         if hyperparams is None:
             self._hyperparams = {
@@ -72,6 +81,15 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
     _param_list = ['alpha','r', 'a', 'b']
 
     def _model(self) -> pm.Model():
+        """
+        Hierarchical Bayesian model to estimate model parameters.
+        This is an internal method and not intended to be called directly.
+
+        Returns
+        -------
+        self.model: pymc.Model
+            Compiled probabilistic PyMC model to estimate model parameters.
+        """
 
         with pm.Model(name=f'{self.__class__.__name__}') as self.model:
             # Priors for lambda parameters.
@@ -110,35 +128,39 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         self, 
         frequency: npt.ArrayLike, 
         recency: npt.ArrayLike, 
-        T: at.var.TensorVariable, 
+        T: npt.ArrayLike, 
         a: at.var.TensorVariable, 
         b: at.var.TensorVariable, 
         alpha: at.var.TensorVariable, 
         r: at.var.TensorVariable,
         testing: bool = False
         ) -> Union[Tuple[at.var.TensorVariable],at.var.TensorVariable]:
-        """Log-likelihood function to estimate model parameters for entire population of customers.
+        """
+        
+        Log-likelihood function to estimate model parameters for entire population of customers.
 
         This function was originally introduced in equation 6 of [2]_, and reformulated in section 7 of [3]_
         to avoid numerical errors for customers who have made large numbers of transactions. 
         More information can be found in [4]_.
 
+        This is an internal method and not intended to be called directly.
+
         Parameters
         ----------
-        frequency: int
-            Total number of transactions for each customer.
-        recency: float64
-            Path where to save model.
-        T: float64
-            Total date periods for each customer.
+        frequency: numpy.ndarray
+            Numpy array containing total number of transactions for each customer.
+        recency: numpy.ndarray
+            Numpy array containing recency (i.e., time periods between the first and last transaction) for each customer.
+        T: numpy.ndarray
+            Numpy array containing total time periods for each customer.
         a: aesara TensorVariable
-            Tensor for 'a' parameter of Beta distribution.
+            Tensor for 'a' shape parameter of Beta distribution.
         b: aesara TensorVariable
-            Tensor for 'b' parameter of Beta distribution.
+            Tensor for 'b' shape parameter of Beta distribution.
         alpha: aesara TensorVariable
-            Tensor for 'beta' parameter of Gamma distribution.
+            Tensor for 'beta' shape parameter of Gamma distribution. (Confusing, but the term alpha is used in the literature.)
         r: aesara TensorVariable
-            Tensor for 'alpha' parameter of Gamma distribution. 
+            Tensor for 'alpha' rate parameter of Gamma distribution. 
         testing: bool
             Testing flag for term validation. Do not use in production.
 
@@ -198,20 +220,30 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
         This function uses equation (10) from [2]_.
 
+        This is an internal method and not intended to be called directly.
+
         Parameters
         ----------
-        t: array_like
-            times to calculate the expectation for.
-        frequency: array_like
-            historical frequency of customer.
-        recency: array_like
-            historical recency of customer.
-        T: array_like
-            age of the customer.
+        t: numpy.ndarray
+            Array containing times to calculate the expectation for each customer.
+        n: int
+            NOT USED FOR THIS METHOD. Retained for predictive API consistency only.
+        posterior: bool
+            Flag to sample from parameter posteriors. Set to True to return predictions as probability distributions.
+        posterior_draws: int
+            Number of draws from parameter posterior distributions.
+        frequency: numpy.ndarray
+            Numpy array containing total number of transactions for each customer.
+        recency: numpy.ndarray
+            Numpy array containing recency (i.e., time periods between the first and last transaction) for each customer.
+        T: numpy.ndarray
+            Numpy array containing total time periods for each customer.
 
         Returns
         -------
-        float
+        cond_n_prchs_to_time: float or numpy.ndarray
+            Point estimates or probability distributions for each customer, dependencing on 'posterior' being set to False or True, respectively.
+
 
         References
         ----------
@@ -273,19 +305,30 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
         From http://www.brucehardie.com/notes/021/palive_for_BGNBD.pdf
 
+        This is an internal method and not intended to be called directly.
+
         Parameters
         ----------
-        frequency: array or scalar
-            historical frequency of customer.
-        recency: array or scalar
-            historical recency of customer.
-        T: array or scalar
-            age of the customer.
+        t: numpy.ndarray
+            NOT USED FOR THIS METHOD. Retained for predictive API consistency only.
+        n: int
+            NOT USED FOR THIS METHOD. Retained for predictive API consistency only.
+        posterior: bool
+            Flag to sample from parameter posteriors. Set to True to return predictions as probability distributions.
+        posterior_draws: int
+            Number of draws from parameter posterior distributions.
+        frequency: numpy.ndarray
+            Numpy array containing total number of transactions for each customer.
+        recency: numpy.ndarray
+            Numpy array containing recency (i.e., time periods between the first and last transaction) for each customer.
+        T: numpy.ndarray
+            Numpy array containing total time periods for each customer.
 
         Returns
         -------
-        array
-            value representing a probability
+        cond_prob_alive: float or numpy.ndarray
+            Point estimates or probability distributions for each customer, dependencing on 'posterior' being set to False or True, respectively.
+
         """
 
         # To get rid of these arguments and IF statements, the pertinent unit test must be refactored.
@@ -322,22 +365,32 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         Calculate repeat purchases for a randomly chosen individual from the
         population.
 
-        Equivalent to equation (9) of [2]_.
+        Equivalent to equation (9) of [1]_.
+
+        This is an internal method and not intended to be called directly.
 
         Parameters
         ----------
-        t: array_like
-            times to calculate the expection for
+        t: numpy.ndarray
+            Array containing times to calculate the expectation of the customer population.
+        n: int
+            NOT USED FOR THIS METHOD. Retained for predictive API consistency only.
+        posterior: bool
+            Flag to sample from parameter posteriors. Set to True to return predictions as probability distributions.
+        posterior_draws: int
+            Number of draws from parameter posterior distributions.
 
         Returns
         -------
-        float
+        n_prchs_to_time: float or numpy.ndarray
+            Point estimate or probability distribution for customer population, contingent on 'posterior' being set to False or True, respectively.
 
         References
         ----------
-        .. [2] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
+        .. [1] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
         "Counting Your Customers the Easy Way: An Alternative to the
         Pareto/NBD Model," Marketing Science, 24 (2), 275-84.
+
         """
 
         self._alpha, self._r, self._a, self._b = self._unload_params(posterior,posterior_draws)
@@ -366,30 +419,34 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         where N(t) is the number of repeat purchases a customer makes in t
         units of time.
 
-        Comes from equation (8) of [2]_.
+        Comes from equation (8) of [1]_.
+
+        This is an internal method and not intended to be called directly.
 
         Parameters
         ----------
-        t: float
-            number units of time
-        n: int
-            number of purchases
+        t: numpy.ndarray
+            Array containing times to calculate the expectation of the customer population.
+        n: numpy.ndarray
+            Array containing number of transaction expectations of the customer population.
+        posterior: bool
+            Flag to sample from parameter posteriors. Set to True to return predictions as probability distributions.
+        posterior_draws: int
+            Number of draws from parameter posterior distributions.
+        posterior_draws: int
+            Number of draws from parameter posterior distributions.
 
         Returns
         -------
-        float:
-            Probability to have n purchases up to t units of time
+        prob_n_prchs_to_time: float or numpy.ndarray
+            Point estimate or probability distribution for customer population, contingent on 'posterior' being set to False or True, respectively.
 
         References
         ----------
-        .. [2] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
+        .. [1] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
         "Counting Your Customers the Easy Way: An Alternative to the
         Pareto/NBD Model," Marketing Science, 24 (2), 275-84.
         """
-
-        # _alpha, _r, _a, _b = self._unload_params(posterior,posterior_draws)
-        # Repeat param arrays for len n.
-        # alpha, r, a, b = [np.tile(_param,(1,n)) for _param in [alpha, r, a, b]]
 
         param_arrays = self._unload_params(posterior,posterior_draws)
         
@@ -412,22 +469,19 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
             if n > 0:
                 # create array of len(n) and transpose.
-                # n_range = np.arange(0, n).T 
                 j = np.arange(0, n)
                 # repeat n_range array for len of posterior draws.
-                # j = np.tile(n_range,(posterior_draws,1))  
                 finite_sum = (gamma(r + j) / gamma(r) / gamma(j + 1) * (t / (alpha + t)) ** j).sum()
                 second_term = beta(a + 1, b + n - 1) / beta(a, b) * (1 - (alpha / (alpha + t)) ** r * finite_sum)
             else:
                 second_term = 0
         
             prob_n_purchase = first_term + second_term
-
             prob_n_purchases.append(prob_n_purchase)
 
         return np.array(prob_n_purchases)
     
-    # BETA TODO: this attribute can be removed after the attribute resolution order issue of PredictMixin is resolved.
+    # BETA TODO? This attribute can be removed if the attribute resolution order issue of PredictMixin is resolved.
     _quantities_of_interest = {
         'cond_prob_alive': _conditional_probability_alive,
         'cond_n_prchs_to_time': _conditional_expected_number_of_purchases_up_to_time,
@@ -441,12 +495,12 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
         Parameters
         ----------
-        t: int
-            rows of synthetic RFM data to generate. Default is 1000.
+        size: int
+            Rows of synthetic RFM data to generate. Default is 1000.
 
         Returns
         -------
-        pd.DataFrame
+        self.synthetic_df: pd.DataFrame
             dataframe containing ["frequency", "recency", "T", "lambda", "p", "alive", "customer_id"] columns.
 
         """

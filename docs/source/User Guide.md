@@ -18,24 +18,24 @@ ID
 """
 ```
 
-#### The shape of your data
-For all models, the following nomenclature is used:
+## RFM Data Format
+All models require datasets in RFM (Recency, Frequency, Monetary Value) format:
 
 - `frequency` represents the number of *repeat* purchases the customer has made. This means that it's one less than the total number of purchases. This is actually slightly wrong. It's the count of time periods the customer had a purchase in. So if using days as units, then it's the count of days the customer had a purchase on.
-- `T` represents the age of the customer in whatever time units chosen (weekly, in the above dataset). This is equal to the duration between a customer's first purchase and the end of the period under study.
 - `recency` represents the age of the customer when they made their most recent purchases. This is equal to the duration between a customer's first purchase and their latest purchase. (Thus if they have made only 1 purchase, the recency is 0.)
 - `monetary_value` represents the average value of a given customer's purchases. This is equal to the sum of all a customer's purchases divided by the total number of purchases. Note that the denominator here is different than the `frequency` described above.
+- `T` represents the age of the customer in whatever time units chosen (weekly, in the above dataset). This is equal to the duration between a customer's first purchase and the end of the period under study.
 
-If your data is not in the format (very common), there are utility functions in btyd to transform your data to look like this.
+For models using covariates, additional columns may be added.
 
-#### Basic Frequency/Recency analysis using the BG/NBD model
+## Basic Frequency/Recency analysis using the BG/NBD model
 
 We'll use the **BG/NBD model** first. There are other models which we will explore in these docs, but this is the simplest to start with.
 
 ```python
 from btyd import BetaGeoFitter
 
-# similar API to scikit-learn.
+# Similar API to scikit-learn.
 bgm = BetaGeoFitter().fit(data)
 print(bgm)
 """
@@ -43,9 +43,7 @@ print(bgm)
 """
 ```
 
-After fitting, we have lots of nice methods and properties attached to the fitter object, like ``param_`` and ``summary``.
-
-##### Visualizing our Frequency/Recency Matrix
+## Visualizing the Frequency/Recency Matrix
 
 Consider a customer who bought from you every day for three weeks straight, and we haven't heard from them in months. What are the chances they are still "alive"? Pretty small. On the other hand, a customer who historically buys from you once a quarter, and bought last quarter, is likely still alive. We can visualize this relationship using the **Frequency/Recency matrix**, which computes the expected number of transactions an artificial customer is to make in the next time period, given his or her recency (age at last purchase) and frequency (the number of repeat transactions he or she has made).
 
@@ -72,7 +70,7 @@ plot_probability_alive_matrix(bgm)
 
 ![prob](https://raw.githubusercontent.com/ColtAllen/btyd/main/docs/source/_static/alivematrix.png)
 
-##### Ranking customers from best to worst
+## Ranking customers from best to worst
 
 Let's return to our customers and rank them from "highest expected purchases in the next period" to lowest. Models expose a method that will predict a customer's expected purchases in the next period using their history.
 
@@ -93,7 +91,7 @@ ID
 
 Great! We can see that the customer who has made 26 purchases, and bought very recently from us, is probably going to buy again in the next period.
 
-##### Assessing Model Fit
+## Assessing Model Fit
 
 Ok, we can predict and we can visualize our customers' behaviour, but is our model correct? There are a few ways to assess the model's correctness. The first is to compare your data versus artificial data simulated with your fitted model's parameters.
 
@@ -106,7 +104,7 @@ plot_period_transactions(bgm)
 
 We can see that our actual data and our simulated data line up well.
 
-##### Example Using Transactional Datasets
+## Example Using Transactional Datasets
 
 Most often, the dataset you have at hand will be at the transaction level. btyd has some utility functions to transform that transactional data (one row per purchase) into summary data (a frequency, recency and age dataset).
 
@@ -143,7 +141,7 @@ bgm.fit(summary)
 ```
 
 
-##### More Model Estimation
+## More Model Estimation
 
 With transactional data, we can partition the dataset into a calibration period dataset and a holdout dataset. This is important as we want to test how our model performs on data not yet seen (think cross-validation in standard machine learning literature). btyd has a function to partition our dataset like this:
 
@@ -176,7 +174,7 @@ plot_calibration_purchases_vs_holdout_purchases(bgf, summary_cal_holdout)
 
 ![holdout](https://raw.githubusercontent.com/ColtAllen/btyd/main/docs/source/_static/holdout_graph.png)
 
-##### Customer Predictions
+## Customer Predictions
 
 Based on customer history, we can predict what an individual's future purchases might look like:
 
@@ -188,7 +186,7 @@ bgm.predict('cond_n_prchs_to_t', t, rfm_df = individual)
 # 0.0576511
 ```
 
-##### Customer Probability Histories
+## Customer Probability Histories
 
 Given a customer's transaction history, we can calculate their historical probability of being alive according to
 our trained model:
@@ -204,7 +202,7 @@ plot_history_alive(bgm, days_since_birth, sp_trans, 'date')
 
 ![history](https://raw.githubusercontent.com/ColtAllen/btyd/main/docs/source/_static/palive_history.png)
 
-### Estimating Customer Lifetime Value using the Gamma-Gamma model
+## Estimating Customer Lifetime Value using the Gamma-Gamma model
 
 Until now we've focused mainly on transaction frequencies and probabilities, but to estimate economic value we can use the Gamma-Gamma model. First we create summary data
 from transactional data also containing economic values for each transaction (i.e. profits or revenues).
@@ -231,7 +229,7 @@ customer_id
 If computing the monetary value from your own data, note that it is the __mean__ of a given customer's value, not the __sum__.
 `monetary_value` can be used to represent profit, or revenue, or any value as long as it is consistently calculated for each customer.
 
-#### The Gamma-Gamma Model and the Independence Assumption
+### The Gamma-Gamma Model and the Independence Assumption
 The Gamma-Gamma submodel relies upon the important assumption there is no
 relationship between the monetary value and the purchase frequency. In practice we need to check whether
 the Pearson correlation between the two vectors is less than 0.3 in order to use this model:
