@@ -12,9 +12,9 @@ from scipy.special import gammaln, hyp2f1, betaln
 from scipy.special import logsumexp
 from scipy.optimize import minimize
 
-from lifetimes.fitters import BaseFitter
-from lifetimes.utils import _check_inputs, _scale_time
-from lifetimes.generate_data import pareto_nbd_model
+from btyd.fitters import BaseFitter
+from btyd.utils import _check_inputs, _scale_time
+from btyd.generate_data import pareto_nbd_model
 
 
 class ParetoNBDFitter(BaseFitter):
