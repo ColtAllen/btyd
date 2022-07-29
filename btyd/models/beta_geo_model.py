@@ -20,7 +20,7 @@ from ..utils import _scale_time, _check_inputs
 from ..generate_data import beta_geometric_nbd_model
 
 
-class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
+class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
     """
     Also known as the BG/NBD model.
     Based on [1]_, this model has the following assumptions:
@@ -28,7 +28,7 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
     2) These come from a population wide Gamma and a Beta distribution respectively.
     3) Individuals purchases follow a Poisson process with rate :math:`\lambda_i*t` .
     4) After each purchase, an individual has a ``p_i`` probability of dieing (never buying again).
-    
+
     Parameters
     ----------
     hyperparams: dict
@@ -44,7 +44,7 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         Hierarchical Bayesian model to estimate model parameters.
     _idata: ArViZ.InferenceData
         InferenceData object of fitted or loaded model. Used for predictions as well as evaluation plots, and model metrics via the ArViZ library.
-        
+
     References
     ----------
     .. [1] Fader, Peter S., Bruce G.S. Hardie, and Ka Lok Lee (2005a),
@@ -66,19 +66,19 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
         if hyperparams is None:
             self._hyperparams = {
-                'alpha_prior_alpha': 1.,
-                'alpha_prior_beta': 6.,
-                'r_prior_alpha': 1.,
-                'r_prior_beta': 1.,
-                'phi_prior_lower': 0.,
-                'phi_prior_upper': 1.,
-                'kappa_prior_alpha': 1.,
-                'kappa_prior_m': 1.5,
+                "alpha_prior_alpha": 1.0,
+                "alpha_prior_beta": 6.0,
+                "r_prior_alpha": 1.0,
+                "r_prior_beta": 1.0,
+                "phi_prior_lower": 0.0,
+                "phi_prior_upper": 1.0,
+                "kappa_prior_alpha": 1.0,
+                "kappa_prior_m": 1.5,
             }
         else:
             self._hyperparams = hyperparams
-    
-    _param_list = ['alpha','r', 'a', 'b']
+
+    _param_list = ["alpha", "r", "a", "b"]
 
     def _model(self) -> pm.Model():
         """
@@ -91,56 +91,61 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
             Compiled probabilistic PyMC model to estimate model parameters.
         """
 
-        with pm.Model(name=f'{self.__class__.__name__}') as self.model:
+        with pm.Model(name=f"{self.__class__.__name__}") as self.model:
             # Priors for lambda parameters.
             alpha_prior = pm.Weibull(
-                name="alpha", 
-                alpha=self._hyperparams.get('alpha_prior_alpha'), 
-                beta=self._hyperparams.get('alpha_prior_beta'),
-                )
+                name="alpha",
+                alpha=self._hyperparams.get("alpha_prior_alpha"),
+                beta=self._hyperparams.get("alpha_prior_beta"),
+            )
             r_prior = pm.Weibull(
-                name="r", 
-                alpha=self._hyperparams.get('r_prior_alpha'), 
-                beta=self._hyperparams.get('r_prior_beta'),
-                )
+                name="r",
+                alpha=self._hyperparams.get("r_prior_alpha"),
+                beta=self._hyperparams.get("r_prior_beta"),
+            )
 
             # Heirarchical pooling of hyperparams for beta parameters.
             phi_prior = pm.Uniform(
-                'phi', 
-                lower=self._hyperparams.get('phi_prior_lower'), 
-                upper=self._hyperparams.get('phi_prior_upper'),
-                )
+                "phi",
+                lower=self._hyperparams.get("phi_prior_lower"),
+                upper=self._hyperparams.get("phi_prior_upper"),
+            )
             kappa_prior = pm.Pareto(
-                'kappa',
-                alpha=self._hyperparams.get('kappa_prior_alpha'),
-                m=self._hyperparams.get('kappa_prior_m'),
-                )
+                "kappa",
+                alpha=self._hyperparams.get("kappa_prior_alpha"),
+                m=self._hyperparams.get("kappa_prior_m"),
+            )
 
             # Beta parameters.
-            a = pm.Deterministic("a", phi_prior*kappa_prior)
-            b = pm.Deterministic("b", (1.0-phi_prior)*kappa_prior)
+            a = pm.Deterministic("a", phi_prior * kappa_prior)
+            b = pm.Deterministic("b", (1.0 - phi_prior) * kappa_prior)
 
-            logp = pm.Potential('loglike', self._log_likelihood(self._frequency, self._recency, self._T, a, b, alpha_prior, r_prior))
-        
+            logp = pm.Potential(
+                "loglike",
+                self._log_likelihood(
+                    self._frequency, self._recency, self._T, a, b, alpha_prior, r_prior
+                ),
+            )
+
         return self.model
 
     def _log_likelihood(
-        self, 
-        frequency: npt.ArrayLike, 
-        recency: npt.ArrayLike, 
-        T: npt.ArrayLike, 
-        a: at.var.TensorVariable, 
-        b: at.var.TensorVariable, 
-        alpha: at.var.TensorVariable, 
+        self,
+        frequency: npt.ArrayLike,
+        recency: npt.ArrayLike,
+        T: npt.ArrayLike,
+        a: at.var.TensorVariable,
+        b: at.var.TensorVariable,
+        alpha: at.var.TensorVariable,
         r: at.var.TensorVariable,
-        testing: bool = False
-        ) -> Union[Tuple[at.var.TensorVariable],at.var.TensorVariable]:
+        testing: bool = False,
+    ) -> Union[Tuple[at.var.TensorVariable], at.var.TensorVariable]:
         """
-        
+
         Log-likelihood function to estimate model parameters for entire population of customers.
 
         This function was originally introduced in equation 6 of [2]_, and reformulated in section 7 of [3]_
-        to avoid numerical errors for customers who have made large numbers of transactions. 
+        to avoid numerical errors for customers who have made large numbers of transactions.
         More information can be found in [4]_.
 
         This is an internal method and not intended to be called directly.
@@ -160,7 +165,7 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         alpha: aesara TensorVariable
             Tensor for 'beta' shape parameter of Gamma distribution. (Confusing, but the term alpha is used in the literature.)
         r: aesara TensorVariable
-            Tensor for 'alpha' rate parameter of Gamma distribution. 
+            Tensor for 'alpha' rate parameter of Gamma distribution.
         testing: bool
             Testing flag for term validation. Do not use in production.
 
@@ -183,34 +188,41 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         t_x = at.as_tensor_variable(recency)
         T = at.as_tensor_variable(T)
 
-        x_zero = at.where(x>0, 1, 0)
+        x_zero = at.where(x > 0, 1, 0)
 
         # Refactored for numerical error
-        d1 = at.gammaln(r + x) - at.gammaln(r) + at.gammaln(a + b) + at.gammaln(b + x) - at.gammaln(b) - at.gammaln(a + b + x)
+        d1 = (
+            at.gammaln(r + x)
+            - at.gammaln(r)
+            + at.gammaln(a + b)
+            + at.gammaln(b + x)
+            - at.gammaln(b)
+            - at.gammaln(a + b + x)
+        )
         d2 = r * at.log(alpha) - (r + x) * at.log(alpha + t_x)
-        c3 = ((alpha + t_x)/(alpha + T))**(r+x)
-        c4 = a/(b+x-1)
+        c3 = ((alpha + t_x) / (alpha + T)) ** (r + x)
+        c4 = a / (b + x - 1)
 
         if testing:
-            return d1.eval(),d2.eval(),c3.eval(),c4.eval()
-        
+            return d1.eval(), d2.eval(), c3.eval(), c4.eval()
+
         else:
-            ll_2 = at.log(at.switch(x_zero, at.sum(c3+c4),c3))
+            ll_2 = at.log(at.switch(x_zero, at.sum(c3 + c4), c3))
 
             loglike = d1 + d2 + at.log(c3 + c4 * at.switch(x_zero, 1, 0))
-            
+
             return loglike
 
     def _conditional_expected_number_of_purchases_up_to_time(
-        self, 
+        self,
         t: npt.ArrayLike = None,
         n: int = None,
         posterior: bool = False,
         posterior_draws: int = 100,
-        frequency:npt.ArrayLike = None,
-        recency:npt.ArrayLike = None,
-        T:npt.ArrayLike = None
-        ) -> Union[float,np.ndarray]:
+        frequency: npt.ArrayLike = None,
+        recency: npt.ArrayLike = None,
+        T: npt.ArrayLike = None,
+    ) -> Union[float, np.ndarray]:
         """
         Conditional expected number of purchases up to time.
 
@@ -261,14 +273,16 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
             recency = self._recency
         if T is None:
             T = self._T
-        
-        self._alpha, self._r, self._a, self._b = self._unload_params(posterior,posterior_draws)
+
+        self._alpha, self._r, self._a, self._b = self._unload_params(
+            posterior, posterior_draws
+        )
 
         alpha = self._alpha
         r = self._r
         a = self._a
         b = self._b
-        
+
         _a = r + x
         _b = b + x
         _c = a + b + x - 1
@@ -277,13 +291,19 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
         # if the value is inf, we are using a different but equivalent
         # formula to compute the function evaluation.
-        ln_hyp_term_alt = np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (_c - _a - _b) * np.log(1 - _z)
+        ln_hyp_term_alt = np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (
+            _c - _a - _b
+        ) * np.log(1 - _z)
         ln_hyp_term = np.where(np.isinf(ln_hyp_term), ln_hyp_term_alt, ln_hyp_term)
         first_term = (a + b + x - 1) / (a - 1)
-        second_term = 1 - np.exp(ln_hyp_term + (r + x) * np.log((alpha + T) / (alpha + t + T)))
+        second_term = 1 - np.exp(
+            ln_hyp_term + (r + x) * np.log((alpha + T) / (alpha + t + T))
+        )
 
         numerator = first_term * second_term
-        denominator = 1 + (x > 0) * (a / (b + x - 1)) * ((alpha + T) / (alpha + recency)) ** (r + x)
+        denominator = 1 + (x > 0) * (a / (b + x - 1)) * (
+            (alpha + T) / (alpha + recency)
+        ) ** (r + x)
 
         return numerator / denominator
 
@@ -293,10 +313,10 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         n: int = None,
         posterior: bool = False,
         posterior_draws: int = 100,
-        frequency:npt.ArrayLike = None,
-        recency:npt.ArrayLike = None,
-        T:npt.ArrayLike = None
-        ) -> np.ndarray:
+        frequency: npt.ArrayLike = None,
+        recency: npt.ArrayLike = None,
+        T: npt.ArrayLike = None,
+    ) -> np.ndarray:
         """
         Compute conditional probability alive.
 
@@ -339,7 +359,9 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         if T is None:
             T = self._T
 
-        self._alpha, self._r, self._a, self._b = self._unload_params(posterior,posterior_draws)
+        self._alpha, self._r, self._a, self._b = self._unload_params(
+            posterior, posterior_draws
+        )
 
         alpha = self._alpha
         r = self._r
@@ -353,12 +375,12 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         return np.atleast_1d(np.where(frequency == 0, 1.0, expit(-log_div)))
 
     def _expected_number_of_purchases_up_to_time(
-        self, 
+        self,
         t: npt.ArrayLike = None,
         n: int = None,
         posterior: bool = False,
         posterior_draws: int = 100,
-        ) -> Union[float,np.ndarray]:
+    ) -> Union[float, np.ndarray]:
         """
         Calculate the expected number of repeat purchases up to time t.
 
@@ -393,7 +415,9 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
 
         """
 
-        self._alpha, self._r, self._a, self._b = self._unload_params(posterior,posterior_draws)
+        self._alpha, self._r, self._a, self._b = self._unload_params(
+            posterior, posterior_draws
+        )
 
         alpha = self._alpha
         r = self._r
@@ -405,12 +429,12 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         return (a + b - 1) / (a - 1) * (1 - hyp * (alpha / (alpha + t)) ** r)
 
     def _probability_of_n_purchases_up_to_time(
-        self, 
-        t: float = None, 
+        self,
+        t: float = None,
         n: int = None,
         posterior: bool = False,
         posterior_draws: int = 100,
-        ) -> Union[np.ndarray,float]:
+    ) -> Union[np.ndarray, float]:
         """
         Compute the probability of n purchases.
 
@@ -448,14 +472,21 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
         Pareto/NBD Model," Marketing Science, 24 (2), 275-84.
         """
 
-        param_arrays = self._unload_params(posterior,posterior_draws)
-        
+        param_arrays = self._unload_params(posterior, posterior_draws)
+
         if not posterior:
-            param_arrays = [np.array(_param).reshape(1,) for _param in param_arrays]
+            param_arrays = [
+                np.array(_param).reshape(
+                    1,
+                )
+                for _param in param_arrays
+            ]
 
         prob_n_purchases = []
 
-        for alpha, r, a, b in zip(param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]):
+        for alpha, r, a, b in zip(
+            param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]
+        ):
 
             first_term = (
                 beta(a, b + n)
@@ -471,25 +502,31 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
                 # create array of len(n) and transpose.
                 j = np.arange(0, n)
                 # repeat n_range array for len of posterior draws.
-                finite_sum = (gamma(r + j) / gamma(r) / gamma(j + 1) * (t / (alpha + t)) ** j).sum()
-                second_term = beta(a + 1, b + n - 1) / beta(a, b) * (1 - (alpha / (alpha + t)) ** r * finite_sum)
+                finite_sum = (
+                    gamma(r + j) / gamma(r) / gamma(j + 1) * (t / (alpha + t)) ** j
+                ).sum()
+                second_term = (
+                    beta(a + 1, b + n - 1)
+                    / beta(a, b)
+                    * (1 - (alpha / (alpha + t)) ** r * finite_sum)
+                )
             else:
                 second_term = 0
-        
+
             prob_n_purchase = first_term + second_term
             prob_n_purchases.append(prob_n_purchase)
 
         return np.array(prob_n_purchases)
-    
+
     # BETA TODO? This attribute can be removed if the attribute resolution order issue of PredictMixin is resolved.
     _quantities_of_interest = {
-        'cond_prob_alive': _conditional_probability_alive,
-        'cond_n_prchs_to_time': _conditional_expected_number_of_purchases_up_to_time,
-        'n_prchs_to_time': _expected_number_of_purchases_up_to_time,
-        'prob_n_prchs_to_time': _probability_of_n_purchases_up_to_time,
-        }
-    
-    def generate_rfm_data(self, size:int = 1000) -> pd.DataFrame:
+        "cond_prob_alive": _conditional_probability_alive,
+        "cond_n_prchs_to_time": _conditional_expected_number_of_purchases_up_to_time,
+        "n_prchs_to_time": _expected_number_of_purchases_up_to_time,
+        "prob_n_prchs_to_time": _probability_of_n_purchases_up_to_time,
+    }
+
+    def generate_rfm_data(self, size: int = 1000) -> pd.DataFrame:
         """
         Generate synthetic RFM data from fitted model parameters. Useful for posterior predictive checks of model performance.
 
@@ -504,12 +541,9 @@ class BetaGeoModel(PredictMixin['BetaGeoModel'], BaseModel['BetaGeoModel']):
             dataframe containing ["frequency", "recency", "T", "lambda", "p", "alive", "customer_id"] columns.
 
         """
-        
+
         alpha, r, a, b = self._unload_params()
 
-        self.synthetic_df = beta_geometric_nbd_model(
-            self._T, r, alpha, a, b, size=size
-            )
-        
+        self.synthetic_df = beta_geometric_nbd_model(self._T, r, alpha, a, b, size=size)
+
         return self.synthetic_df
-    
