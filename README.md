@@ -36,8 +36,8 @@ pip install btyd
 
 Please refer to the [Contributing Guide](https://github.com/ColtAllen/btyd/blob/master/CONTRIBUTING.md) before creating any *Pull Requests*.
 
-## Documentation and tutorials
-[Official Documentation of pre-fork Lifetimes library](http://lifetimes.readthedocs.io/en/latest/)
+## Documentation and Tutorials
+[User Guide](https://btyd.readthedocs.io/en/latest/User%20Guide.html)
 
 
 ## Questions? Comments? Requests?
