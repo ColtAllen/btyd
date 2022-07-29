@@ -9,7 +9,7 @@
 - Added deprecation warning for legacy Lifetimes `fitters` module.
 - Removed extraneous `lifetimes` import causing build issues.
 - Removed `psutils` library dependency.
-- Added `numpy >=1.20.0` library dependency
+- Added `numpy >=1.20.0` library dependency.
 - `utils.posterior_predictive_deviation` metric removed pending further evaluation.
 - CI/CD pre-commit scripts added.
 
