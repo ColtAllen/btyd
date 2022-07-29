@@ -1,21 +1,23 @@
 Changelog
 =========
 
-0.1.beta1
+0.1beta1
 ~~~~~~~~~
  - Bayesian predictions now supported, enabling entire probability distributions as well as point estimates for predictive outputs.
  - Streamlined user API to minimize input arguments. All predictive methods are now also called from a single function.
- - `model._idata` attribute now persisted as an `arviz.InferenceData` object, and can be saved externally in JSON or CSV format. However, only JSONs can be loaded as of this release.
- - Documentation updated to latest version of `sphinx` and `pydata-sphinx-theme`.
+ - ``model._idata`` attribute now persisted as an ``arviz.InferenceData`` object, and can be saved externally in JSON or CSV format. However, only JSONs can be loaded as of this release.
+ - Documentation updated to latest versions of ``sphinx`` and ``pydata-sphinx-theme``.
  - Removed *High Level Overview* from documentation.
  - Added deprecation warning for legacy Lifetimes `fitters` module.
- - Removed extraneous `lifetimes` import causing build issues.
- - Removed `psutils` library dependency.
- - `utils.posterior_predictive_deviation` metric removed pending further evaluation.
+ - Removed extraneous ``lifetimes`` import causing build issues.
+ - Removed ``psutils`` library dependency.
+ - Added ``numpy >=1.20.0`` library dependency.
+ - ``utils.posterior_predictive_deviation`` metric removed pending further evaluation.
+ - CI/CD pre-commit scripts added.
 
 .. _section-1:
 
-0.1.0alpha1
+0.1alpha1
 ~~~~~~~~~~~
  - Forked ``lifetimes`` library v0.11.3 and rebranded as ``btyd``.
  - ``BetaGeoCovarsFitter`` BG/NBD model with time-invariant covariates added to ``fitters`` module.
