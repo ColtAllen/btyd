@@ -180,7 +180,7 @@ class BaseModel(ABC, Generic[SELF]):
         rfm_df: pandas.DataFrame
             Dataframe containing recency, frequency, monetary value, and time period columns. Only required if model is loaded from an external file.
         join_df: bool
-            NOT SUPPORTED IN 0.1beta1. Flag to add columns to rfm_df containing predictive outputs.
+            NOT SUPPORTED IN 0.1beta2. Flag to add columns to rfm_df containing predictive outputs.
 
         Returns
         -------

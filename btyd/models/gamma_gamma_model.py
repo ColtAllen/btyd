@@ -280,3 +280,9 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         return _customer_lifetime_value(
             transaction_prediction_model, frequency, recency, T, adjusted_monetary_value, time, discount_rate, freq=freq
         )
+    
+    def generate_rfm_data(self):
+        '''
+        Not currently supported for GammaGammaModel.
+        '''
+        pass

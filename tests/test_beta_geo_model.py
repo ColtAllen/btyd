@@ -2,7 +2,6 @@ from __future__ import generator_stop
 from __future__ import annotations
 
 import os
-import inspect
 
 import pytest
 
@@ -14,23 +13,9 @@ import pymc as pm
 import aesara.tensor as at
 
 import btyd
-import btyd.utils as utils
-from btyd.datasets import (
-    load_cdnow_summary,
-    load_cdnow_summary_data_with_monetary_value,
-    load_donations,
-    load_transaction_data,
-)
 
 
 class TestBetaGeoModel:
-
-    @pytest.fixture(scope='class')
-    def fitted_bgm(self,cdnow_customers): # ADD TYPE HINTING
-        """ For running multiple tests on a single BetaGeoModel fit() instance. """
-
-        bgm = btyd.BetaGeoModel().fit(cdnow_customers)
-        return bgm
 
     def test_hyperparams(self):
         """
@@ -243,14 +228,14 @@ class TestBetaGeoModel:
                                             ("cond_n_prchs_to_time",np.float64), 
                                             ("n_prchs_to_time",np.float64),
                                             ("prob_n_prchs_to_time",np.ndarray)])
-    def test_predict_mean(self,fitted_bgm,cdnow_customers, qoi, instance):
+    def test_predict_mean(self,fitted_bgm,cdnow, qoi, instance):
         """
         GIVEN a fitted BetaGeoModel,
         WHEN all four quantities of interest are called via BetaGeoModel.predict() for posterior mean predictions,
         THEN expected output instances and dimensions should be returned.
         """
 
-        array_out = fitted_bgm.predict(method=qoi,rfm_df=cdnow_customers,t=10,n=5)
+        array_out = fitted_bgm.predict(method=qoi,rfm_df=cdnow,t=10,n=5)
 
         assert isinstance(array_out,instance)
     
@@ -259,14 +244,14 @@ class TestBetaGeoModel:
                                         ("cond_n_prchs_to_time",np.ndarray, 200), 
                                         ("n_prchs_to_time",np.ndarray, 300),
                                         ("prob_n_prchs_to_time",np.ndarray, 400)])
-    def test_predict_full(self,fitted_bgm,cdnow_customers,qoi, instance, draws):
+    def test_predict_full(self,fitted_bgm,cdnow,qoi, instance, draws):
         """
         GIVEN a fitted BetaGeoModel,
         WHEN all four quantities of interest are called via BetaGeoModel.predict() for full posterior predictions,
         THEN expected output instances and dimensions should be returned.
         """
 
-        array_out = fitted_bgm.predict(method=qoi,rfm_df=cdnow_customers,t=10,n=5,sample_posterior=True, posterior_draws=draws)
+        array_out = fitted_bgm.predict(method=qoi,rfm_df=cdnow,t=10,n=5,sample_posterior=True, posterior_draws=draws)
 
         assert isinstance(array_out,instance)
         assert len(array_out) == draws

@@ -16,13 +16,7 @@ import pymc as pm
 import aesara.tensor as at
 
 import btyd
-import btyd.utils as utils
-from btyd.datasets import (
-    load_cdnow_summary,
-    load_cdnow_summary_data_with_monetary_value,
-    load_donations,
-    load_transaction_data,
-)
+
 
 def test_deprecated():
     """
@@ -104,14 +98,14 @@ class TestBaseModel:
         sample_set = set(posterior_samples.flatten())
         assert len(sample_set.intersection(dist_set)) <= len(posterior_distribution)
     
-    def test_dataframe_parser(self,cdnow_customers):
+    def test_dataframe_parser(self,cdnow):
         """
         GIVEN an RFM dataframe,
         WHEN the _dataframe_parser() static method is called on it,
         THEN five numpy arrays should be returned.
         """
 
-        parsed = btyd.BaseModel._dataframe_parser(cdnow_customers) 
+        parsed = btyd.BaseModel._dataframe_parser(cdnow) 
         assert len(parsed) == 5
 
 
