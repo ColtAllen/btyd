@@ -11,12 +11,11 @@ import numpy.typing as npt
 import pymc as pm
 import aesara.tensor as at
 
-from scipy.special import gammaln, beta, gamma
+from scipy.special import beta, gamma
 from scipy.special import hyp2f1
 from scipy.special import expit
 
 from . import BaseModel, PredictMixin
-from ..utils import _scale_time, _check_inputs
 from ..generate_data import beta_geometric_nbd_model
 
 
