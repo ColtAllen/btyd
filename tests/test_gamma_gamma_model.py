@@ -56,13 +56,13 @@ class TestGammaGammaModel:
         values = {
             'frequency': 50,
             'monetary_value': 38,
-            'p': 40,
-            'q': 0.25,
-            'v': 4.,
+            'p': 6.25,
+            'q': 3.74,
+            'v': 15.44,
         }
 
         loglike_out = btyd.GammaGammaModel._log_likelihood(self,**values).eval()
-        expected = np.array([100.7957])
+        expected = np.array([862.9432])
         np.testing.assert_allclose(loglike_out,expected,rtol=1e-04)
     
     def test_repr(self,fitted_ggm):
