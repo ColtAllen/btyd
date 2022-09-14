@@ -18,10 +18,17 @@ import btyd.utils as utils
 class TestGammaGammaModel:
 
     @pytest.fixture(scope='class')
-    def fitted_ggm(self,cdnow):
+    def cdnow_repeat(self,cdnow):
+        """ Select customers from the CDNOW dataset who have made multiple transactions. """
+
+        repeat_customers = cdnow.loc[cdnow['frequency']>0,:]
+        return repeat_customers
+
+    @pytest.fixture(scope='class')
+    def fitted_ggm(self,cdnow_repeat):
         """ For running multiple tests on a single GammaGammaModel fit() instance. """
 
-        ggm = btyd.GammaGammaModel().fit(cdnow)
+        ggm = btyd.GammaGammaModel().fit(cdnow_repeat)
         return ggm
     
     def test_hyperparams(self):
@@ -76,11 +83,8 @@ class TestGammaGammaModel:
         assert repr(btyd.GammaGammaModel()) == "<btyd.GammaGammaModel>"
         
         # Expected parameters may vary slightly due to rounding errors.
-        expected = [
-             "<btyd.GammaGammaModel: Parameters {'p': 6.25, 'q': 3.74, 'v': 15.44} estimated with 2357 customers.>",
-              "<btyd.GammaGammaModel: Parameters {'p': 6.25, 'q': 3.74, 'v': 15.44} estimated with 2357 customers.>",
-        ]
-        assert any(expected) == True
+        expected = "<btyd.GammaGammaModel: Parameters {'p': 6.25, 'q': 3.74, 'v': 15.44} estimated with 2357 customers.>"
+        assert expected == fitted_ggm.__repr__
     
     def test_model(self,fitted_ggm):
         """
@@ -128,7 +132,7 @@ class TestGammaGammaModel:
 
         sampled_posterior_params = fitted_ggm._unload_params(posterior=True)
 
-        assert len(sampled_posterior_params) == 4
+        assert len(sampled_posterior_params) == 3
         assert sampled_posterior_params[0].shape == (100,)
 
     def test_conditional_expected_average_profit(self, fitted_ggm, cdnow):
@@ -202,7 +206,7 @@ class TestGammaGammaModel:
 
         pass
 
-    def test_predict_mean(self,fitted_bgm,cdnow_customers, qoi, instance):
+    def test_predict_mean(self,fitted_bgm,cdnow, qoi, instance):
         """
         GIVEN a fitted BetaGeoModel,
         WHEN all four quantities of interest are called via BetaGeoModel.predict() for posterior mean predictions,

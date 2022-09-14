@@ -90,6 +90,8 @@ class BaseModel(ABC, Generic[SELF]):
             _,
         ) = self._dataframe_parser(rfm_df)
 
+        _check_inputs(frequency = self._frequency, recency = self._recency, T = self._T, monetary_value = self._monetary_value)
+
         with self._model():
             self._idata = pm.sample(
                 tune=tune,

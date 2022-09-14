@@ -81,12 +81,12 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         if hyperparams is None:
             self._hyperparams = {
-                "p_prior_alpha": 1.0,
-                "p_prior_beta": 1.0,
-                "q_prior_alpha": 1.0,
-                "q_prior_beta": 1.0,
-                "v_prior_alpha": 1.0,
-                "v_prior_beta": 1.0,
+                "p_prior_alpha": 2.0,
+                "p_prior_beta": 6.0,
+                "q_prior_alpha": 2.0,
+                "q_prior_beta": 6.0,
+                "v_prior_alpha": 2.0,
+                "v_prior_beta": 15.0,
             }
         else:
             self._hyperparams = hyperparams
@@ -214,10 +214,17 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         """
 
         if monetary_value is None:
-            monetary_value = self.data["monetary_value"]
+            monetary_value = self._monetary_value
         if frequency is None:
-            frequency = self.data["frequency"]
-        p, q, v = self._unload_params("p", "q", "v")
+            frequency = self._frequency
+
+        self._p, self._q, self._v = self._unload_params(
+            posterior, posterior_draws
+        )
+
+        p = self._p
+        q = self._q
+        v = self._v
 
         # The expected average profit is a weighted average of individual
         # monetary value and the population mean.
