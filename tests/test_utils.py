@@ -11,17 +11,25 @@ from btyd import utils, BetaGeoFitter, ParetoNBDFitter
 from btyd.datasets import load_dataset
 
 
-DATASETS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'btyd/datasets')
+DATASETS_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "btyd/datasets"
+)
+
 
 @pytest.fixture()
 def example_transaction_data():
-    return pd.read_csv(os.path.join(DATASETS_PATH, "example_transactions.csv"), parse_dates=["date"])
+    return pd.read_csv(
+        os.path.join(DATASETS_PATH, "example_transactions.csv"), parse_dates=["date"]
+    )
 
 
 @pytest.fixture()
 def example_summary_data(example_transaction_data):
     return utils.summary_data_from_transaction_data(
-        example_transaction_data, "id", "date", observation_period_end=max(example_transaction_data.date)
+        example_transaction_data,
+        "id",
+        "date",
+        observation_period_end=max(example_transaction_data.date),
     )
 
 
@@ -93,7 +101,13 @@ def large_transaction_level_data_with_monetary_value():
 @pytest.fixture()
 def cdnow_transactions():
     transactions = load_dataset("CDNOW_sample.txt", header=None, sep=r"\s+")
-    transactions.columns = ["id_total", "id_sample", "date", "num_cd_purc", "total_value"]
+    transactions.columns = [
+        "id_total",
+        "id_sample",
+        "date",
+        "num_cd_purc",
+        "total_value",
+    ]
     return transactions[["id_sample", "date"]]
 
 
@@ -120,7 +134,11 @@ def df_cum_transactions(cdnow_transactions):
     transactions_summary = transactions_summary.reset_index()
 
     model = ParetoNBDFitter()
-    model.fit(transactions_summary["frequency"], transactions_summary["recency"], transactions_summary["T"])
+    model.fit(
+        transactions_summary["frequency"],
+        transactions_summary["recency"],
+        transactions_summary["T"],
+    )
 
     df_cum = utils.expected_cumulative_transactions(
         model,
@@ -138,7 +156,9 @@ def df_cum_transactions(cdnow_transactions):
 
 def test_find_first_transactions_returns_correct_results(large_transaction_level_data):
     today = "2015-02-07"
-    actual = utils._find_first_transactions(large_transaction_level_data, "id", "date", observation_period_end=today)
+    actual = utils._find_first_transactions(
+        large_transaction_level_data, "id", "date", observation_period_end=today
+    )
     expected = pd.DataFrame(
         [
             [1, pd.Period("2015-01-01", "D"), True],
@@ -160,10 +180,16 @@ def test_find_first_transactions_returns_correct_results(large_transaction_level
     assert_frame_equal(actual, expected)
 
 
-def test_find_first_transactions_with_specific_non_daily_frequency(large_transaction_level_data):
+def test_find_first_transactions_with_specific_non_daily_frequency(
+    large_transaction_level_data,
+):
     today = "2015-02-07"
     actual = utils._find_first_transactions(
-        large_transaction_level_data, "id", "date", observation_period_end=today, freq="W"
+        large_transaction_level_data,
+        "id",
+        "date",
+        observation_period_end=today,
+        freq="W",
     )
     expected = pd.DataFrame(
         [
@@ -183,10 +209,16 @@ def test_find_first_transactions_with_specific_non_daily_frequency(large_transac
     assert_frame_equal(actual, expected)
 
 
-def test_find_first_transactions_with_monetary_values(large_transaction_level_data_with_monetary_value):
+def test_find_first_transactions_with_monetary_values(
+    large_transaction_level_data_with_monetary_value,
+):
     today = "2015-02-07"
     actual = utils._find_first_transactions(
-        large_transaction_level_data_with_monetary_value, "id", "date", "monetary_value", observation_period_end=today
+        large_transaction_level_data_with_monetary_value,
+        "id",
+        "date",
+        "monetary_value",
+        observation_period_end=today,
     )
     expected = pd.DataFrame(
         [
@@ -210,7 +242,7 @@ def test_find_first_transactions_with_monetary_values(large_transaction_level_da
 
 
 def test_find_first_transactions_with_monetary_values_with_specific_non_daily_frequency(
-    large_transaction_level_data_with_monetary_value
+    large_transaction_level_data_with_monetary_value,
 ):
     today = "2015-02-07"
     actual = utils._find_first_transactions(
@@ -238,18 +270,23 @@ def test_find_first_transactions_with_monetary_values_with_specific_non_daily_fr
     assert_frame_equal(actual, expected)
 
 
-def test_summary_data_from_transaction_data_returns_correct_results(transaction_level_data):
+def test_summary_data_from_transaction_data_returns_correct_results(
+    transaction_level_data,
+):
     today = "2015-02-07"
     actual = utils.summary_data_from_transaction_data(
         transaction_level_data, "id", "date", observation_period_end=today
     )
     expected = pd.DataFrame(
-        [[1, 1.0, 5.0, 6.0], [2, 0.0, 0.0, 37.0], [3, 2.0, 4.0, 37.0]], columns=["id", "frequency", "recency", "T"]
+        [[1, 1.0, 5.0, 6.0], [2, 0.0, 0.0, 37.0], [3, 2.0, 4.0, 37.0]],
+        columns=["id", "frequency", "recency", "T"],
     ).set_index("id")
     assert_frame_equal(actual, expected)
 
 
-def test_summary_data_from_transaction_data_works_with_string_customer_ids(transaction_level_data):
+def test_summary_data_from_transaction_data_works_with_string_customer_ids(
+    transaction_level_data,
+):
     d = [
         ["X", "2015-02-01"],
         ["X", "2015-02-06"],
@@ -263,7 +300,7 @@ def test_summary_data_from_transaction_data_works_with_string_customer_ids(trans
 
 
 def test_summary_data_from_transaction_data_works_with_int_customer_ids_and_doesnt_coerce_to_float(
-    transaction_level_data
+    transaction_level_data,
 ):
     d = [
         [1, "2015-02-01"],
@@ -278,23 +315,38 @@ def test_summary_data_from_transaction_data_works_with_int_customer_ids_and_does
     assert actual.index.dtype == "int64"
 
 
-def test_summary_data_from_transaction_data_with_specific_datetime_format(transaction_level_data):
-    transaction_level_data["date"] = transaction_level_data["date"].map(lambda x: x.replace("-", ""))
+def test_summary_data_from_transaction_data_with_specific_datetime_format(
+    transaction_level_data,
+):
+    transaction_level_data["date"] = transaction_level_data["date"].map(
+        lambda x: x.replace("-", "")
+    )
     format = "%Y%m%d"
     today = "20150207"
     actual = utils.summary_data_from_transaction_data(
-        transaction_level_data, "id", "date", observation_period_end=today, datetime_format=format
+        transaction_level_data,
+        "id",
+        "date",
+        observation_period_end=today,
+        datetime_format=format,
     )
     expected = pd.DataFrame(
-        [[1, 1.0, 5.0, 6.0], [2, 0.0, 0.0, 37.0], [3, 2.0, 4.0, 37.0]], columns=["id", "frequency", "recency", "T"]
+        [[1, 1.0, 5.0, 6.0], [2, 0.0, 0.0, 37.0], [3, 2.0, 4.0, 37.0]],
+        columns=["id", "frequency", "recency", "T"],
     ).set_index("id")
     assert_frame_equal(actual, expected)
 
 
-def test_summary_date_from_transaction_data_with_specific_non_daily_frequency(large_transaction_level_data):
+def test_summary_date_from_transaction_data_with_specific_non_daily_frequency(
+    large_transaction_level_data,
+):
     today = "20150207"
     actual = utils.summary_data_from_transaction_data(
-        large_transaction_level_data, "id", "date", observation_period_end=today, freq="W"
+        large_transaction_level_data,
+        "id",
+        "date",
+        observation_period_end=today,
+        freq="W",
     )
     expected = pd.DataFrame(
         [
@@ -310,7 +362,9 @@ def test_summary_date_from_transaction_data_with_specific_non_daily_frequency(la
     assert_frame_equal(actual, expected)
 
 
-def test_summary_date_from_transaction_with_monetary_values(large_transaction_level_data_with_monetary_value):
+def test_summary_date_from_transaction_with_monetary_values(
+    large_transaction_level_data_with_monetary_value,
+):
     today = "20150207"
     actual = utils.summary_data_from_transaction_data(
         large_transaction_level_data_with_monetary_value,
@@ -337,15 +391,25 @@ def test_summary_data_from_transaction_data_will_choose_the_correct_first_order_
     # this is the correct behaviour. See https://github.com/CamDavidsonPilon/lifetimes/issues/85
     # and test_summary_statistics_are_indentical_to_hardies_paper_confirming_correct_aggregations
     cust = pd.Series([2, 2, 2])
-    dates_ordered = pd.to_datetime(pd.Series(["2014-03-14 00:00:00", "2014-04-09 00:00:00", "2014-05-21 00:00:00"]))
+    dates_ordered = pd.to_datetime(
+        pd.Series(["2014-03-14 00:00:00", "2014-04-09 00:00:00", "2014-05-21 00:00:00"])
+    )
     sales = pd.Series([10, 20, 25])
     transaction_data = pd.DataFrame({"date": dates_ordered, "id": cust, "sales": sales})
-    summary_ordered_data = utils.summary_data_from_transaction_data(transaction_data, "id", "date", "sales")
+    summary_ordered_data = utils.summary_data_from_transaction_data(
+        transaction_data, "id", "date", "sales"
+    )
 
-    dates_unordered = pd.to_datetime(pd.Series(["2014-04-09 00:00:00", "2014-03-14 00:00:00", "2014-05-21 00:00:00"]))
+    dates_unordered = pd.to_datetime(
+        pd.Series(["2014-04-09 00:00:00", "2014-03-14 00:00:00", "2014-05-21 00:00:00"])
+    )
     sales = pd.Series([20, 10, 25])
-    transaction_data = pd.DataFrame({"date": dates_unordered, "id": cust, "sales": sales})
-    summary_unordered_data = utils.summary_data_from_transaction_data(transaction_data, "id", "date", "sales")
+    transaction_data = pd.DataFrame(
+        {"date": dates_unordered, "id": cust, "sales": sales}
+    )
+    summary_unordered_data = utils.summary_data_from_transaction_data(
+        transaction_data, "id", "date", "sales"
+    )
 
     assert_frame_equal(summary_ordered_data, summary_unordered_data)
     assert summary_ordered_data["monetary_value"].loc[2] == 22.5
@@ -377,7 +441,11 @@ def test_calibration_and_holdout_data(large_transaction_level_data):
     today = "2015-02-07"
     calibration_end = "2015-02-01"
     actual = utils.calibration_and_holdout_data(
-        large_transaction_level_data, "id", "date", calibration_end, observation_period_end=today
+        large_transaction_level_data,
+        "id",
+        "date",
+        calibration_end,
+        observation_period_end=today,
     )
     assert actual.loc[1]["frequency_holdout"] == 1
     assert actual.loc[2]["frequency_holdout"] == 0
@@ -387,7 +455,7 @@ def test_calibration_and_holdout_data(large_transaction_level_data):
 
 
 def test_calibration_and_holdout_data_throws_better_error_if_observation_period_end_is_too_early(
-    large_transaction_level_data
+    large_transaction_level_data,
 ):
     # max date is 2015-02-02
     today = "2014-02-07"
@@ -395,29 +463,53 @@ def test_calibration_and_holdout_data_throws_better_error_if_observation_period_
 
     with pytest.raises(ValueError, match="There is no data available"):
         utils.calibration_and_holdout_data(
-            large_transaction_level_data, "id", "date", calibration_end, observation_period_end=today
+            large_transaction_level_data,
+            "id",
+            "date",
+            calibration_end,
+            observation_period_end=today,
         )
 
 
-def test_calibration_and_holdout_data_is_okay_with_other_indexes(large_transaction_level_data):
+def test_calibration_and_holdout_data_is_okay_with_other_indexes(
+    large_transaction_level_data,
+):
     n = large_transaction_level_data.shape[0]
     large_transaction_level_data.index = np.random.randint(0, n, size=n)
     today = "2015-02-07"
     calibration_end = "2015-02-01"
     actual = utils.calibration_and_holdout_data(
-        large_transaction_level_data, "id", "date", calibration_end, observation_period_end=today
+        large_transaction_level_data,
+        "id",
+        "date",
+        calibration_end,
+        observation_period_end=today,
     )
     assert actual.loc[1]["frequency_holdout"] == 1
     assert actual.loc[2]["frequency_holdout"] == 0
 
 
-def test_calibration_and_holdout_data_works_with_specific_frequency(large_transaction_level_data):
+def test_calibration_and_holdout_data_works_with_specific_frequency(
+    large_transaction_level_data,
+):
     today = "2015-02-07"
     calibration_end = "2015-02-01"
     actual = utils.calibration_and_holdout_data(
-        large_transaction_level_data, "id", "date", calibration_end, observation_period_end=today, freq="W"
+        large_transaction_level_data,
+        "id",
+        "date",
+        calibration_end,
+        observation_period_end=today,
+        freq="W",
     )
-    expected_cols = ["id", "frequency_cal", "recency_cal", "T_cal", "frequency_holdout", "duration_holdout"]
+    expected_cols = [
+        "id",
+        "frequency_cal",
+        "recency_cal",
+        "T_cal",
+        "frequency_holdout",
+        "duration_holdout",
+    ]
     expected = pd.DataFrame(
         [
             [1, 0.0, 0.0, 4.0, 1, 1],
@@ -450,13 +542,19 @@ def test_calibration_and_holdout_data_gives_correct_date_boundaries():
     ]
     transactions = pd.DataFrame(d, columns=["id", "date"])
     actual = utils.calibration_and_holdout_data(
-        transactions, "id", "date", calibration_period_end="2015-02-01", observation_period_end="2015-02-04"
+        transactions,
+        "id",
+        "date",
+        calibration_period_end="2015-02-01",
+        observation_period_end="2015-02-04",
     )
     assert actual["frequency_holdout"].loc[1] == 0
     assert actual["frequency_holdout"].loc[4] == 1
 
 
-def test_calibration_and_holdout_data_with_monetary_value(large_transaction_level_data_with_monetary_value):
+def test_calibration_and_holdout_data_with_monetary_value(
+    large_transaction_level_data_with_monetary_value,
+):
     today = "2015-02-07"
     calibration_end = "2015-02-01"
     actual = utils.calibration_and_holdout_data(
@@ -472,17 +570,23 @@ def test_calibration_and_holdout_data_with_monetary_value(large_transaction_leve
 
 
 def test_summary_data_from_transaction_data_squashes_period_purchases_to_one_purchase():
-    transactions = pd.DataFrame([[1, "2015-01-01"], [1, "2015-01-01"]], columns=["id", "t"])
+    transactions = pd.DataFrame(
+        [[1, "2015-01-01"], [1, "2015-01-01"]], columns=["id", "t"]
+    )
     actual = utils.summary_data_from_transaction_data(transactions, "id", "t", freq="W")
     assert actual.loc[1]["frequency"] == 1.0 - 1.0
 
 
-def test_calculate_alive_path(example_transaction_data, example_summary_data, fitted_bg):
+def test_calculate_alive_path(
+    example_transaction_data, example_summary_data, fitted_bg
+):
     user_data = example_transaction_data[example_transaction_data["id"] == 33]
     frequency, recency, T = example_summary_data.loc[33]
     alive_path = utils.calculate_alive_path(fitted_bg, user_data, "date", 205)
     assert alive_path[0] == 1
-    assert alive_path[T] == fitted_bg.conditional_probability_alive(frequency, recency, T)
+    assert alive_path[T] == fitted_bg.conditional_probability_alive(
+        frequency, recency, T
+    )
 
 
 def test_check_inputs():
@@ -514,7 +618,9 @@ def test_check_inputs():
 def test_summary_data_from_transaction_data_obeys_data_contraints(example_summary_data):
     assert (
         utils._check_inputs(
-            example_summary_data["frequency"], example_summary_data["recency"], example_summary_data["T"]
+            example_summary_data["frequency"],
+            example_summary_data["recency"],
+            example_summary_data["T"],
         )
         is None
     )
@@ -594,9 +700,15 @@ def test_customer_lifetime_value_with_known_values(fitted_bg):
     assert_allclose(clv_t2_d1.values, expected / 2.0 + expected / 4.0, rtol=0.1)
 
 
-def test_expected_cumulative_transactions_dedups_inside_a_time_period(fitted_bg, example_transaction_data):
-    by_week = utils.expected_cumulative_transactions(fitted_bg, example_transaction_data, "date", "id", 10, freq="W")
-    by_day = utils.expected_cumulative_transactions(fitted_bg, example_transaction_data, "date", "id", 10, freq="D")
+def test_expected_cumulative_transactions_dedups_inside_a_time_period(
+    fitted_bg, example_transaction_data
+):
+    by_week = utils.expected_cumulative_transactions(
+        fitted_bg, example_transaction_data, "date", "id", 10, freq="W"
+    )
+    by_day = utils.expected_cumulative_transactions(
+        fitted_bg, example_transaction_data, "date", "id", 10, freq="D"
+    )
     assert (by_week["actual"] >= by_day["actual"]).all()
 
 
@@ -680,7 +792,11 @@ def test_expected_cumulative_transactions_date_index(cdnow_transactions):
     transactions_summary = transactions_summary.reset_index()
 
     model = BetaGeoFitter()
-    model.fit(transactions_summary["frequency"], transactions_summary["recency"], transactions_summary["T"])
+    model.fit(
+        transactions_summary["frequency"],
+        transactions_summary["recency"],
+        transactions_summary["T"],
+    )
 
     df_cum = utils.expected_cumulative_transactions(
         model,

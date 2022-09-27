@@ -81,16 +81,16 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         if hyperparams is None:
             self._hyperparams = {
-                "p_prior_alpha": 2.0,
+                "p_prior_alpha": 1.0,
                 "p_prior_beta": 6.0,
-                "q_prior_alpha": 2.0,
-                "q_prior_beta": 6.0,
-                "v_prior_alpha": 2.0,
+                "q_prior_alpha": 1.0,
+                "q_prior_beta": 4.0,
+                "v_prior_alpha": 1.0,
                 "v_prior_beta": 15.0,
             }
         else:
             self._hyperparams = hyperparams
-    
+
     _param_list = ["p", "q", "v"]
 
     def _model(self) -> pm.Model():
@@ -180,11 +180,85 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         )
 
         return loglike
-    
+
+    def predict(
+        self,
+        method: str,
+        sample_posterior: bool = False,
+        posterior_draws: int = 100,
+        join_df=False,
+        rfm_df: pd.DataFrame = None,
+        transaction_prediction_model: btyd.Model = None,
+        time: int = 12,
+        discount_rate: float = 0.01,
+        freq: str = "D",
+    ) -> pd.Series:
+
+        """
+        Base method for running Gamma-Gamma model predictions.
+
+        Parameters
+        ----------
+        method: str
+            Predictive quantity of interest; accepts 'avg_value' or 'clv'.
+        sample_posterior: bool
+            Flag for sampling from parameter posteriors. Set to 'True' to return predictive probability distributions instead of point estimates.
+        posterior_draws: int
+            Number of draws from parameter posteriors.
+        join_df: bool
+            NOT SUPPORTED IN 0.1beta2. Flag to add columns to rfm_df containing predictive outputs.
+        rfm_df: pandas.DataFrame
+            Dataframe containing recency, frequency, monetary value, and time period columns. Only required if model is loaded from an external file.
+        transaction_prediction_model: btyd.models
+            the model to predict future transactions, literature uses pareto/ndb models but we can also use a different model like beta-geo models
+        time: float, optional
+            the lifetime expected for the user in months. Default: 12
+        discount_rate: float, optional
+            the monthly adjusted discount rate. Default: 0.01
+        freq: string, optional
+            {"D", "H", "M", "W"} for day, hour, month, week. This represents what unit of time your T is measured in.
+
+        Returns
+        -------
+        predictions: np.ndarray
+            Numpy arrays containing predictive quantities of interest.
+
+        """
+
+        if rfm_df is None:
+            (
+                self._frequency,
+                self._recency,
+                self._T,
+                self._monetary_value,
+                _,
+            ) = self._dataframe_parser(rfm_df)
+
+        # TODO: Add exception handling for method argument.
+        predictions = self._quantities_of_interest.get(method)(
+            self, sample_posterior, posterior_draws, transaction_prediction_model, time, discount_rate, freq
+        )
+
+        # TODO: After v0.1.0, add arg to automatically merge to RFM dataframe.
+        if join_df:
+            pass
+
+        # TODO: Additional columns will need to be added for mean, confidence intervals, etc.
+        if sample_posterior:
+            pass
+
+        return predictions
+
     def _conditional_expected_average_profit(
-        self, 
+        self,
+        sample_posterior: bool = False,
+        posterior_draws: int = None,
+        transaction_prediction_model: btyd.models = None,
+        time: int = None,
+        discount_rate: float = None,
+        freq: str = None,
         frequency: npt.ArrayLike = None, 
-        monetary_value: npt.ArrayLike = None
+        monetary_value: npt.ArrayLike = None,
     ) -> np.ndarray:
         """
         Conditional expectation of the average profit.
@@ -213,14 +287,13 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
             The conditional expectation of the average profit per transaction
         """
 
-        if monetary_value is None:
-            monetary_value = self._monetary_value
+        # To get rid of these arguments and IF statements, the pertinent unit test must be refactored.
         if frequency is None:
             frequency = self._frequency
+        if monetary_value is None:
+            monetary_value = self._monetary_value
 
-        self._p, self._q, self._v = self._unload_params(
-            posterior, posterior_draws
-        )
+        self._p, self._q, self._v = self._unload_params(sample_posterior, posterior_draws)
 
         p = self._p
         q = self._q
@@ -231,19 +304,23 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         individual_weight = p * frequency / (p * frequency + q - 1)
         population_mean = v * p / (q - 1)
 
-        return (1 - individual_weight) * population_mean + individual_weight * monetary_value
-    
+        return (
+            1 - individual_weight
+        ) * population_mean + individual_weight * monetary_value
+
     def _customer_lifetime_value(
-        self, 
-        transaction_prediction_model: btyd.Model, 
-        frequency: npt.ArrayLike = None, 
-        recency: npt.ArrayLike = None, 
-        T: npt.ArrayLike = None, 
-        monetary_value: npt.ArrayLike = None, 
-        time: int = 12, 
-        discount_rate: float = 0.01, 
-        freq: str = "D"
-    ):
+        self,
+        sample_posterior: bool = False,
+        posterior_draws: int = 100,
+        transaction_prediction_model: btyd.models.BaseModel = None,
+        time: int = 12,
+        discount_rate: float = 0.01,
+        freq: str = "D",
+        frequency: npt.ArrayLike = None,
+        monetary_value: npt.ArrayLike = None,
+        recency: npt.ArrayLike = None,
+        T: npt.ArrayLike = None,
+    ) -> pd.Series:
         """
         Return customer lifetime value.
 
@@ -254,25 +331,25 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         Parameters
         ----------
-        transaction_prediction_model: model
+        transaction_prediction_model: btyd.models
             the model to predict future transactions, literature uses
             pareto/ndb models but we can also use a different model like beta-geo models
-        frequency: array_like
-            the frequency vector of customers' purchases
-            (denoted x in literature).
-        recency: the recency vector of customers' purchases
-                 (denoted t_x in literature).
-        T: array_like
-            customers' age (time units since first purchase)
-        monetary_value: array_like
-            the monetary value vector of customer's purchases
-            (denoted m in literature).
         time: float, optional
             the lifetime expected for the user in months. Default: 12
         discount_rate: float, optional
             the monthly adjusted discount rate. Default: 0.01
         freq: string, optional
             {"D", "H", "M", "W"} for day, hour, month, week. This represents what unit of time your T is measure in.
+        frequency: array_like
+            the frequency vector of customers' purchases
+            (denoted x in literature).
+        monetary_value: array_like
+            the monetary value vector of customer's purchases
+            (denoted m in literature).
+        recency: the recency vector of customers' purchases
+                 (denoted t_x in literature).
+        T: array_like
+            customers' age (time units since first purchase)
 
         Returns
         -------
@@ -280,16 +357,47 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
             Series object with customer ids as index and the estimated customer
             lifetime values as values
         """
-        
-        # use the Gamma-Gamma estimates for the monetary_values
-        adjusted_monetary_value = self._conditional_expected_average_profit(frequency, monetary_value)
 
-        return _customer_lifetime_value(
-            transaction_prediction_model, frequency, recency, T, adjusted_monetary_value, time, discount_rate, freq=freq
+        # To get rid of these arguments and IF statements, the pertinent unit test must be refactored.
+        if frequency is None:
+            frequency = self._frequency
+        if monetary_value is None:
+            monetary_value = self._monetary_value
+        if recency is None:
+            recency = self._recency
+        if T is None:
+            T = self._T
+
+        # use the Gamma-Gamma estimates for the monetary_values
+        adjusted_monetary_value = self._conditional_expected_average_profit(
+            sample_posterior = sample_posterior, posterior_draws = posterior_draws, frequency = frequency, monetary_value = monetary_value
         )
-    
+
+        df = pd.DataFrame(index=range(len(frequency)))
+        df["clv"] = 0  # initialize the clv column to zeros
+
+        steps = np.arange(1, time + 1)
+        factor = {"W": 4.345, "M": 1.0, "D": 30, "H": 30 * 24}[freq]
+
+        for i in steps * factor:
+            # since the prediction of number of transactions is cumulative, we have to subtract off the previous periods
+            expected_number_of_transactions = transaction_prediction_model._conditional_expected_number_of_purchases_up_to_time(
+                t = i, frequency = frequency, recency = recency, T = T
+            ) - transaction_prediction_model._conditional_expected_number_of_purchases_up_to_time(t = i - factor, frequency = frequency, recency = recency, T = T)
+            # sum up the CLV estimates of all of the periods and apply discounted cash flow
+            df["clv"] += (adjusted_monetary_value * expected_number_of_transactions) / (
+                1 + discount_rate
+            ) ** (i / factor)
+
+        return df["clv"]  # return as a series
+
+    _quantities_of_interest = {
+        "avg_value": _conditional_expected_average_profit,
+        "clv": _customer_lifetime_value,
+    }
+
     def generate_rfm_data(self):
-        '''
+        """
         Not currently supported for GammaGammaModel.
-        '''
+        """
         pass
