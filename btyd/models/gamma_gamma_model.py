@@ -81,12 +81,12 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         if hyperparams is None:
             self._hyperparams = {
-                "p_prior_alpha": 1.0,
-                "p_prior_beta": 6.0,
-                "q_prior_alpha": 1.0,
-                "q_prior_beta": 4.0,
-                "v_prior_alpha": 1.0,
-                "v_prior_beta": 15.0,
+                "p_prior_alpha": 1.,
+                "p_prior_beta": 1.,
+                "q_prior_alpha": 1.,
+                "q_prior_beta": 3,
+                "v_prior_alpha": 1.,
+                "v_prior_beta": 3.5,
             }
         else:
             self._hyperparams = hyperparams
@@ -184,15 +184,15 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
     def predict(
         self,
         method: str,
+        rfm_df: pd.DataFrame = None,
         sample_posterior: bool = False,
         posterior_draws: int = 100,
         join_df=False,
-        rfm_df: pd.DataFrame = None,
         transaction_prediction_model: btyd.Model = None,
         time: int = 12,
         discount_rate: float = 0.01,
         freq: str = "D",
-    ) -> pd.Series:
+    ) -> np.ndarray:
 
         """
         Base method for running Gamma-Gamma model predictions.
@@ -201,14 +201,14 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         ----------
         method: str
             Predictive quantity of interest; accepts 'avg_value' or 'clv'.
+        rfm_df: pandas.DataFrame
+            Dataframe containing recency, frequency, monetary value, and time period columns.
         sample_posterior: bool
             Flag for sampling from parameter posteriors. Set to 'True' to return predictive probability distributions instead of point estimates.
         posterior_draws: int
             Number of draws from parameter posteriors.
         join_df: bool
             NOT SUPPORTED IN 0.1beta2. Flag to add columns to rfm_df containing predictive outputs.
-        rfm_df: pandas.DataFrame
-            Dataframe containing recency, frequency, monetary value, and time period columns. Only required if model is loaded from an external file.
         transaction_prediction_model: btyd.models
             the model to predict future transactions, literature uses pareto/ndb models but we can also use a different model like beta-geo models
         time: float, optional
@@ -225,7 +225,8 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         """
 
-        if rfm_df is None:
+        # TODO: Will need to resolve disparate data attributes of transaction_prediction_model before making rfm_df optional.
+        if rfm_df is not None:
             (
                 self._frequency,
                 self._recency,
@@ -293,20 +294,37 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         if monetary_value is None:
             monetary_value = self._monetary_value
 
-        self._p, self._q, self._v = self._unload_params(sample_posterior, posterior_draws)
+        # self._p, self._q, self._v = self._unload_params(sample_posterior, posterior_draws)
 
-        p = self._p
-        q = self._q
-        v = self._v
+        # p = self._p
+        # q = self._q
+        # v = self._v
 
-        # The expected average profit is a weighted average of individual
-        # monetary value and the population mean.
-        individual_weight = p * frequency / (p * frequency + q - 1)
-        population_mean = v * p / (q - 1)
+        param_arrays = self._unload_params(sample_posterior, posterior_draws) 
 
-        return (
-            1 - individual_weight
-        ) * population_mean + individual_weight * monetary_value
+        if not sample_posterior:
+            param_arrays = [
+                np.array(_param).reshape(
+                    1,
+                )
+                for _param in param_arrays
+            ]
+
+        avg_profit_array = []
+
+        for p, q, v in zip(
+            param_arrays[0], param_arrays[1], param_arrays[2]
+        ):
+
+            # The expected average profit is a weighted average of individual
+            # monetary value and the population mean.
+            individual_weight = p * frequency / (p * frequency + q - 1)
+            population_mean = v * p / (q - 1)
+
+            avg_profit =  (1 - individual_weight) * population_mean + individual_weight * monetary_value
+            avg_profit_array.append(avg_profit)
+
+        return np.array(avg_profit_array)
 
     def _customer_lifetime_value(
         self,
@@ -320,7 +338,7 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         monetary_value: npt.ArrayLike = None,
         recency: npt.ArrayLike = None,
         T: npt.ArrayLike = None,
-    ) -> pd.Series:
+    ) -> np.ndarray:
         """
         Return customer lifetime value.
 
@@ -373,8 +391,10 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
             sample_posterior = sample_posterior, posterior_draws = posterior_draws, frequency = frequency, monetary_value = monetary_value
         )
 
-        df = pd.DataFrame(index=range(len(frequency)))
-        df["clv"] = 0  # initialize the clv column to zeros
+        if sample_posterior:
+            clv = np.zeros((posterior_draws,len(frequency))) # initialize clv as zero
+        else:
+            clv = np.zeros((1,len(frequency)))
 
         steps = np.arange(1, time + 1)
         factor = {"W": 4.345, "M": 1.0, "D": 30, "H": 30 * 24}[freq]
@@ -385,11 +405,11 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
                 t = i, frequency = frequency, recency = recency, T = T
             ) - transaction_prediction_model._conditional_expected_number_of_purchases_up_to_time(t = i - factor, frequency = frequency, recency = recency, T = T)
             # sum up the CLV estimates of all of the periods and apply discounted cash flow
-            df["clv"] += (adjusted_monetary_value * expected_number_of_transactions) / (
+            clv = np.add(clv,(adjusted_monetary_value * expected_number_of_transactions) / (
                 1 + discount_rate
-            ) ** (i / factor)
+            ) ** (i / factor), out = clv)
 
-        return df["clv"]  # return as a series
+        return clv  # return as a series
 
     _quantities_of_interest = {
         "avg_value": _conditional_expected_average_profit,

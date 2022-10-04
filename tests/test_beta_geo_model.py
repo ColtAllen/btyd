@@ -85,7 +85,7 @@ class TestBetaGeoModel:
             "<btyd.BetaGeoModel: Parameters {'alpha': 4.4, 'r': 0.2, 'a': 0.8, 'b': 2.4} estimated with 2357 customers.>",
             "<btyd.BetaGeoModel: Parameters {'alpha': 4.5, 'r': 0.2, 'a': 0.8, 'b': 2.4} estimated with 2357 customers.>",
         ]
-        assert any(expected) == True
+        assert repr(fitted_bgm) in expected
 
     def test_model(self, fitted_bgm):
         """
@@ -263,7 +263,7 @@ class TestBetaGeoModel:
     def test_predict_mean(self, fitted_bgm, cdnow, qoi, instance):
         """
         GIVEN a fitted BetaGeoModel,
-        WHEN all four quantities of interest are called via BetaGeoModel.predict()  with and w/o data for posterior mean predictions,
+        WHEN all four quantities of interest are called via BetaGeoModel.predict() with and w/o data for posterior mean predictions,
         THEN expected output instances and datatypes should be returned.
         """
 

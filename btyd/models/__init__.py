@@ -378,11 +378,11 @@ class PredictMixin(ABC, Generic[SELF]):
     def predict(
         self,
         method: str,
+        rfm_df: pd.DataFrame = None,
         t: int = None,
         n: int = None,
         sample_posterior: bool = False,
         posterior_draws: int = 100,
-        rfm_df: pd.DataFrame = None,
         join_df=False,
     ) -> np.ndarray:
         """
@@ -392,6 +392,8 @@ class PredictMixin(ABC, Generic[SELF]):
         ----------
         method: str
             Predictive quantity of interest; accepts 'cond_prob_alive', 'cond_n_prchs_to_time','n_prchs_to_time', or 'prob_n_prchs_to_time'.
+        rfm_df: pandas.DataFrame
+            Dataframe containing recency, frequency, monetary value, and time period columns.
         t: int
             Number of time periods for predictions.
         n: int
@@ -400,8 +402,6 @@ class PredictMixin(ABC, Generic[SELF]):
             Flag for sampling from parameter posteriors. Set to 'True' to return predictive probability distributions instead of point estimates.
         posterior_draws: int
             Number of draws from parameter posteriors.
-        rfm_df: pandas.DataFrame
-            Dataframe containing recency, frequency, monetary value, and time period columns. Only required if model is loaded from an external file.
         join_df: bool
             NOT SUPPORTED IN 0.1beta2. Flag to add columns to rfm_df containing predictive outputs.
 
@@ -412,7 +412,7 @@ class PredictMixin(ABC, Generic[SELF]):
 
         """
 
-        if rfm_df is None:
+        if rfm_df is not None:
             (
                 self._frequency,
                 self._recency,
