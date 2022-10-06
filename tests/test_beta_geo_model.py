@@ -167,7 +167,7 @@ class TestBetaGeoModel:
         """
 
         times = np.array([0.1429, 1.0, 3.00, 31.8571, 32.00, 78.00])
-        expected = np.array([0.0078, 0.0532, 0.1506, 1.0405, 1.0437, 1.8576])
+        expected = np.array([[0.0078, 0.0532, 0.1506, 1.0405, 1.0437, 1.8576]])
         actual = fitted_bgm._expected_number_of_purchases_up_to_time(times, None)
         np.testing.assert_allclose(actual, expected, rtol=1e-02)
 
@@ -186,11 +186,11 @@ class TestBetaGeoModel:
                         <= fitted_bgm._conditional_probability_alive(
                             None, None, False, 100, i, j, k
                         )
-                        <= 1.0
+                        <= [1.0]
                     )
         assert (
             fitted_bgm._conditional_probability_alive(None, None, False, 100, 0, 1, 1)
-            == 1.0
+            == [1.0]
         )
 
     def test_probability_of_n_purchases_up_to_time(self, fitted_bgm):
@@ -252,15 +252,15 @@ class TestBetaGeoModel:
         assert actual == expected
 
     @pytest.mark.parametrize(
-        "qoi, instance",
+        "qoi",
         [
-            ("cond_prob_alive", np.ndarray),
-            ("cond_n_prchs_to_time", np.float64),
-            ("n_prchs_to_time", np.float64),
-            ("prob_n_prchs_to_time", np.ndarray),
+            "cond_prob_alive",
+            "cond_n_prchs_to_time",
+            "n_prchs_to_time",
+            "prob_n_prchs_to_time",
         ],
     )
-    def test_predict_mean(self, fitted_bgm, cdnow, qoi, instance):
+    def test_predict_mean(self, fitted_bgm, cdnow, qoi):
         """
         GIVEN a fitted BetaGeoModel,
         WHEN all four quantities of interest are called via BetaGeoModel.predict() with and w/o data for posterior mean predictions,
@@ -268,21 +268,21 @@ class TestBetaGeoModel:
         """
 
         array_out = fitted_bgm.predict(method=qoi, t=10, n=5)
-        assert isinstance(array_out, instance)
+        assert isinstance(array_out, np.ndarray)
 
         array_out = fitted_bgm.predict(method=qoi, rfm_df=cdnow, t=10, n=5)
-        assert isinstance(array_out, instance)
+        assert isinstance(array_out, np.ndarray)
 
     @pytest.mark.parametrize(
-        "qoi, instance, draws",
+        "qoi, draws",
         [
-            ("cond_prob_alive", np.ndarray, 100),
-            ("cond_n_prchs_to_time", np.ndarray, 200),
-            ("n_prchs_to_time", np.ndarray, 300),
-            ("prob_n_prchs_to_time", np.ndarray, 400),
+            ("cond_prob_alive", 100),
+            ("cond_n_prchs_to_time", 200),
+            ("n_prchs_to_time", 300),
+            ("prob_n_prchs_to_time", 400),
         ],
     )
-    def test_predict_full(self, fitted_bgm, cdnow, qoi, instance, draws):
+    def test_predict_full(self, fitted_bgm, cdnow, qoi, draws):
         """
         GIVEN a fitted BetaGeoModel,
         WHEN all four quantities of interest are called via BetaGeoModel.predict() for full posterior predictions,
@@ -298,7 +298,7 @@ class TestBetaGeoModel:
             posterior_draws=draws,
         )
 
-        assert isinstance(array_out, instance)
+        assert isinstance(array_out, np.ndarray)
         assert len(array_out) == draws
 
     def test_generate_rfm_data(self, fitted_bgm):

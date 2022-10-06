@@ -294,12 +294,6 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         if monetary_value is None:
             monetary_value = self._monetary_value
 
-        # self._p, self._q, self._v = self._unload_params(sample_posterior, posterior_draws)
-
-        # p = self._p
-        # q = self._q
-        # v = self._v
-
         param_arrays = self._unload_params(sample_posterior, posterior_draws) 
 
         if not sample_posterior:

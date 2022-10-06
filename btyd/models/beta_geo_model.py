@@ -20,7 +20,7 @@ from ..generate_data import beta_geometric_nbd_model
 
 
 class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
-    """
+    r"""
     Also known as the BG/NBD model.
     Based on [1]_, this model has the following assumptions:
     1) Each individual, ``i``, has a hidden ``lambda_i`` and ``p_i`` parameter
@@ -221,7 +221,7 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
         frequency: npt.ArrayLike = None,
         recency: npt.ArrayLike = None,
         T: npt.ArrayLike = None,
-    ) -> Union[float, np.ndarray]:
+    ) -> np.ndarray:
         """
         Conditional expected number of purchases up to time.
 
@@ -252,7 +252,7 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
 
         Returns
         -------
-        cond_n_prchs_to_time: float or numpy.ndarray
+        cond_n_prchs_to_time: numpy.ndarray
             Point estimates or probability distributions for each customer, dependencing on 'posterior' being set to False or True, respectively.
 
 
@@ -273,38 +273,47 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
         if T is None:
             T = self._T
 
-        self._alpha, self._r, self._a, self._b = self._unload_params(
-            posterior, posterior_draws
-        )
+        param_arrays = self._unload_params(posterior, posterior_draws)
 
-        alpha = self._alpha
-        r = self._r
-        a = self._a
-        b = self._b
+        if not posterior:
+            param_arrays = [
+                np.array(_param).reshape(
+                    1,
+                )
+                for _param in param_arrays
+            ]
 
-        _a = r + x
-        _b = b + x
-        _c = a + b + x - 1
-        _z = t / (alpha + T + t)
-        ln_hyp_term = np.log(hyp2f1(_a, _b, _c, _z))
+        cond_n_purchases = []
 
-        # if the value is inf, we are using a different but equivalent
-        # formula to compute the function evaluation.
-        ln_hyp_term_alt = np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (
-            _c - _a - _b
-        ) * np.log(1 - _z)
-        ln_hyp_term = np.where(np.isinf(ln_hyp_term), ln_hyp_term_alt, ln_hyp_term)
-        first_term = (a + b + x - 1) / (a - 1)
-        second_term = 1 - np.exp(
-            ln_hyp_term + (r + x) * np.log((alpha + T) / (alpha + t + T))
-        )
+        for alpha, r, a, b in zip(
+            param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]
+        ):
+            _a = r + x
+            _b = b + x
+            _c = a + b + x - 1
+            _z = t / (alpha + T + t)
+            ln_hyp_term = np.log(hyp2f1(_a, _b, _c, _z))
 
-        numerator = first_term * second_term
-        denominator = 1 + (x > 0) * (a / (b + x - 1)) * (
-            (alpha + T) / (alpha + recency)
-        ) ** (r + x)
+            # if the value is inf, we are using a different but equivalent
+            # formula to compute the function evaluation.
+            ln_hyp_term_alt = np.log(hyp2f1(_c - _a, _c - _b, _c, _z)) + (
+                _c - _a - _b
+            ) * np.log(1 - _z)
+            ln_hyp_term = np.where(np.isinf(ln_hyp_term), ln_hyp_term_alt, ln_hyp_term)
+            first_term = (a + b + x - 1) / (a - 1)
+            second_term = 1 - np.exp(
+                ln_hyp_term + (r + x) * np.log((alpha + T) / (alpha + t + T))
+            )
 
-        return numerator / denominator
+            numerator = first_term * second_term
+            denominator = 1 + (x > 0) * (a / (b + x - 1)) * (
+                (alpha + T) / (alpha + recency)
+            ) ** (r + x)
+
+            cond_n_purchase = numerator / denominator
+            cond_n_purchases.append(cond_n_purchase)
+
+        return np.array(cond_n_purchases)
 
     def _conditional_probability_alive(
         self,
@@ -358,20 +367,30 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
         if T is None:
             T = self._T
 
-        self._alpha, self._r, self._a, self._b = self._unload_params(
-            posterior, posterior_draws
-        )
+        param_arrays = self._unload_params(posterior, posterior_draws)
 
-        alpha = self._alpha
-        r = self._r
-        a = self._a
-        b = self._b
+        if not posterior:
+            param_arrays = [
+                np.array(_param).reshape(
+                    1,
+                )
+                for _param in param_arrays
+            ]
 
-        log_div = (r + frequency) * np.log((alpha + T) / (alpha + recency)) + np.log(
-            a / (b + np.maximum(frequency, 1) - 1)
-        )
+        cond_p_alive = []
 
-        return np.atleast_1d(np.where(frequency == 0, 1.0, expit(-log_div)))
+        for alpha, r, a, b in zip(
+            param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]
+        ):
+
+            log_div = (r + frequency) * np.log((alpha + T) / (alpha + recency)) + np.log(
+                a / (b + np.maximum(frequency, 1) - 1)
+            )
+
+            cond_alive = np.atleast_1d(np.where(frequency == 0, 1.0, expit(-log_div)))
+            cond_p_alive.append(cond_alive)
+
+        return np.array(cond_p_alive)
 
     def _expected_number_of_purchases_up_to_time(
         self,
@@ -414,18 +433,28 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
 
         """
 
-        self._alpha, self._r, self._a, self._b = self._unload_params(
-            posterior, posterior_draws
-        )
+        param_arrays = self._unload_params(posterior, posterior_draws)
 
-        alpha = self._alpha
-        r = self._r
-        a = self._a
-        b = self._b
+        if not posterior:
+            param_arrays = [
+                np.array(_param).reshape(
+                    1,
+                )
+                for _param in param_arrays
+            ]
 
-        hyp = hyp2f1(r, b, a + b - 1, t / (alpha + t))
+        expected_purchases = []
 
-        return (a + b - 1) / (a - 1) * (1 - hyp * (alpha / (alpha + t)) ** r)
+        for alpha, r, a, b in zip(
+            param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]
+        ):
+
+            hyp = hyp2f1(r, b, a + b - 1, t / (alpha + t))
+        
+            expected_purchase = (a + b - 1) / (a - 1) * (1 - hyp * (alpha / (alpha + t)) ** r)
+            expected_purchases.append(expected_purchase)
+
+        return np.array(expected_purchases)
 
     def _probability_of_n_purchases_up_to_time(
         self,
