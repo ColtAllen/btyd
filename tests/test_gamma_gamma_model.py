@@ -181,7 +181,7 @@ class TestGammaGammaModel:
             monetary_value = cdnow_repeat["MONETARY_VALUE"].values,
         )
 
-        np.testing.assert_allclose(ggm_clv.mean(), 222.5, atol=1.8)
+        np.testing.assert_allclose(ggm_clv.mean(), 222.5, atol=2.5)
 
         ggm_clv = fitted_ggm._customer_lifetime_value(
             transaction_prediction_model = fitted_bgm,
