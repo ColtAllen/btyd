@@ -25,8 +25,9 @@ class BaseModel(ABC, Generic[SELF]):
     Abstract class defining all base model methods as well as methods to be overridden when creating a model subclass.
     """
 
-    # This attribute must be defined in model subclasses.
+    # These attribute must be defined in model subclasses.
     _quantities_of_interest: dict
+    _param_list: list
 
     @abstractmethod
     def __init__(self) -> SELF:
@@ -90,6 +91,13 @@ class BaseModel(ABC, Generic[SELF]):
             _,
         ) = self._dataframe_parser(rfm_df)
 
+        self._check_inputs(
+            frequency=self._frequency,
+            recency=self._recency,
+            T=self._T,
+            monetary_value=self._monetary_value,
+        )
+
         with self._model():
             self._idata = pm.sample(
                 tune=tune,
@@ -151,67 +159,6 @@ class BaseModel(ABC, Generic[SELF]):
                     for var in self._param_list
                 ]
             )
-
-    def predict(
-        self,
-        method: str,
-        t: int = None,
-        n: int = None,
-        sample_posterior: bool = False,
-        posterior_draws: int = 100,
-        rfm_df: pd.DataFrame = None,
-        join_df=False,
-    ) -> np.ndarray:
-        """
-        Base method for running model predictions.
-
-        Parameters
-        ----------
-        method: str
-            Predictive quantity of interest; accepts 'cond_prob_alive', 'cond_n_prchs_to_time','n_prchs_to_time', or 'prob_n_prchs_to_time'.
-        t: int
-            Number of time periods for predictions.
-        n: int
-            Number of transactions predicted.
-        sample_posterior: bool
-            Flag for sampling from parameter posteriors. Set to 'True' to return predictive probability distributions instead of point estimates.
-        posterior_draws: int
-            Number of draws from parameter posteriors.
-        rfm_df: pandas.DataFrame
-            Dataframe containing recency, frequency, monetary value, and time period columns. Only required if model is loaded from an external file.
-        join_df: bool
-            NOT SUPPORTED IN 0.1beta1. Flag to add columns to rfm_df containing predictive outputs.
-
-        Returns
-        -------
-        predictions: np.ndarray
-            Numpy arrays containing predictive quantities of interest.
-
-        """
-
-        if rfm_df is None:
-            (
-                self._frequency,
-                self._recency,
-                self._T,
-                self._monetary_value,
-                _,
-            ) = self._dataframe_parser(rfm_df)
-
-        # TODO: Add exception handling for method argument.
-        predictions = self._quantities_of_interest.get(method)(
-            self, t, n, sample_posterior, posterior_draws
-        )
-
-        # TODO: Add arg to automatically merge to RFM dataframe?
-        if join_df:
-            pass
-
-        if sample_posterior:
-            # Additional columns will need to be added for mean, confidence intervals, etc.
-            pass
-
-        return predictions
 
     def save(self, filename: str) -> None:
         """
@@ -311,6 +258,65 @@ class BaseModel(ABC, Generic[SELF]):
         """
         rng = np.random.default_rng()
         return rng.choice(param_array, n_samples, replace=True)
+    
+    def _check_inputs(self, frequency: array_like, recency: array_like=None, T:array_like=None, monetary_value:array_like=None) -> None:
+        """
+        Check validity of inputs.
+
+        Raises ValueError when checks fail.
+
+        The checks go sequentially from recency, to frequency and monetary value:
+
+        - recency > T.
+        - recency[frequency == 0] != 0)
+        - recency < 0
+        - zero length vector in frequency, recency or T
+        - non-integer values in the frequency vector.
+        - non-positive (<= 0) values in the monetary_value vector for the Gamma-Gamma model.
+        - non-positive (<= 0) values in the frequency vector for the Gamma-Gamma model.
+
+        Parameters
+        ----------
+        frequency: array_like
+            the frequency vector of customers' purchases (denoted x in literature).
+        recency: array_like, optional
+            the recency vector of customers' purchases (denoted t_x in literature).
+        T: array_like, optional
+            the vector of customers' age (time since first purchase)
+        monetary_value: array_like, optional
+            the monetary value vector of customer's purchases (denoted m in literature).
+        """
+
+        if recency is not None:
+            if T is not None and np.all(recency > T):
+                raise ValueError(
+                    "Some values in recency vector are larger than T vector."
+                )
+            if np.any(recency[frequency == 0] != 0):
+                raise ValueError(
+                    "There exist non-zero recency values when frequency is zero."
+                )
+            if np.any(recency < 0):
+                raise ValueError(
+                    "There exist negative recency (ex: last order set before first order)"
+                )
+            if any(x.shape[0] == 0 for x in [recency, frequency, T]):
+                raise ValueError(
+                    "There exists a zero length vector in one of frequency, recency or T."
+                )
+        if np.sum((frequency - frequency.astype(int)) ** 2) != 0:
+            raise ValueError("There exist non-integer values in the frequency vector.")
+        if self.__class__.__name__ == "GammaGammaModel":
+            if np.any(monetary_value <= 0):
+                raise ValueError(
+                    "There exist non-positive (<= 0) values in the monetary_value vector."
+                )
+            if np.any(frequency <= 0):
+                raise ValueError(
+                    "There exist non-positive (<= 0) values in the frequency vector."
+                )
+        # TODO: raise warning if np.any(freqency > T) as this means that there are
+        # more order-periods than periods.
 
 
 class PredictMixin(ABC, Generic[SELF]):
@@ -368,3 +374,64 @@ class PredictMixin(ABC, Generic[SELF]):
         "n_prchs_to_time": _expected_number_of_purchases_up_to_time,
         "prob_n_prchs_to_time": _probability_of_n_purchases_up_to_time,
     }
+
+    def predict(
+        self,
+        method: str,
+        rfm_df: pd.DataFrame = None,
+        t: int = None,
+        n: int = None,
+        sample_posterior: bool = False,
+        posterior_draws: int = 100,
+        join_df=False,
+    ) -> np.ndarray:
+        """
+        Base method for running model predictions.
+
+        Parameters
+        ----------
+        method: str
+            Predictive quantity of interest; accepts 'cond_prob_alive', 'cond_n_prchs_to_time','n_prchs_to_time', or 'prob_n_prchs_to_time'.
+        rfm_df: pandas.DataFrame
+            Dataframe containing recency, frequency, monetary value, and time period columns.
+        t: int
+            Number of time periods for predictions.
+        n: int
+            Number of transactions predicted.
+        sample_posterior: bool
+            Flag for sampling from parameter posteriors. Set to 'True' to return predictive probability distributions instead of point estimates.
+        posterior_draws: int
+            Number of draws from parameter posteriors.
+        join_df: bool
+            NOT SUPPORTED IN 0.1beta2. Flag to add columns to rfm_df containing predictive outputs.
+
+        Returns
+        -------
+        predictions: np.ndarray
+            Numpy arrays containing predictive quantities of interest.
+
+        """
+
+        if rfm_df is not None:
+            (
+                self._frequency,
+                self._recency,
+                self._T,
+                self._monetary_value,
+                _,
+            ) = self._dataframe_parser(rfm_df)
+
+        # TODO: Add exception handling for method argument.
+        predictions = self._quantities_of_interest.get(method)(
+            self, t, n, sample_posterior, posterior_draws
+        )
+
+        # TODO: Add arg to automatically merge to RFM dataframe?
+        if join_df:
+            pass
+
+        if sample_posterior:
+            # Additional columns will need to be added for mean, confidence intervals, etc.
+            pass
+
+        return predictions

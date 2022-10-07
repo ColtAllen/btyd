@@ -34,18 +34,33 @@ def transaction_data():
 @pytest.fixture()
 def cdnow_transactions():
     transactions = load_dataset("CDNOW_sample.txt", header=None, sep=r"\s+")
-    transactions.columns = ["id_total", "id_sample", "date", "num_cd_purc", "total_value"]
+    transactions.columns = [
+        "id_total",
+        "id_sample",
+        "date",
+        "num_cd_purc",
+        "total_value",
+    ]
     return transactions[["id_sample", "date"]]
 
 
 @pytest.fixture()
 def bgf_transactions(cdnow_transactions):
     transactions_summary = utils.summary_data_from_transaction_data(
-        cdnow_transactions, "id_sample", "date", datetime_format="%Y%m%d", observation_period_end="19970930", freq="W"
+        cdnow_transactions,
+        "id_sample",
+        "date",
+        datetime_format="%Y%m%d",
+        observation_period_end="19970930",
+        freq="W",
     )
 
     bgf = BetaGeoFitter(penalizer_coef=0.01)
-    bgf.fit(transactions_summary["frequency"], transactions_summary["recency"], transactions_summary["T"])
+    bgf.fit(
+        transactions_summary["frequency"],
+        transactions_summary["recency"],
+        transactions_summary["T"],
+    )
     return bgf
 
 
@@ -62,9 +77,13 @@ class TestPlotting:
 
         assert_allclose([p.get_height() for p in ax.patches], expected, rtol=0.3)
         assert_equal(ax.title.get_text(), "Frequency of Repeat Transactions")
-        assert_equal(ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions")
+        assert_equal(
+            ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions"
+        )
         assert_equal(ax.yaxis.get_label().get_text(), "Customers")
-        assert_array_equal([label.get_text() for label in ax.legend_.get_texts()], ["Actual", "Model"])
+        assert_array_equal(
+            [label.get_text() for label in ax.legend_.get_texts()], ["Actual", "Model"]
+        )
         plt.close()
 
     def test_plot_period_transactions_mbgf(self, cd_data):
@@ -75,13 +94,42 @@ class TestPlotting:
         ax = plotting.plot_period_transactions(mbgf)
 
         assert_equal(ax.title.get_text(), "Frequency of Repeat Transactions")
-        assert_equal(ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions")
+        assert_equal(
+            ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions"
+        )
         assert_equal(ax.yaxis.get_label().get_text(), "Customers")
-        assert_array_equal([label.get_text() for label in ax.legend_.get_texts()], ["Actual", "Model"])
+        assert_array_equal(
+            [label.get_text() for label in ax.legend_.get_texts()], ["Actual", "Model"]
+        )
         plt.close()
 
     def test_plot_period_transactions_max_frequency(self, bgf):
-        expected = [1411, 439, 214, 100, 62, 38, 29, 23, 7, 5, 5, 5, 1429, 470, 155, 89, 71, 39, 26, 20, 18, 9, 6, 7]
+        expected = [
+            1411,
+            439,
+            214,
+            100,
+            62,
+            38,
+            29,
+            23,
+            7,
+            5,
+            5,
+            5,
+            1429,
+            470,
+            155,
+            89,
+            71,
+            39,
+            26,
+            20,
+            18,
+            9,
+            6,
+            7,
+        ]
 
         ax = plotting.plot_period_transactions(bgf, max_frequency=12)
 
@@ -89,9 +137,13 @@ class TestPlotting:
             [p.get_height() for p in ax.patches], expected, atol=50
         )  # can be large relative differences for small counts
         assert_equal(ax.title.get_text(), "Frequency of Repeat Transactions")
-        assert_equal(ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions")
+        assert_equal(
+            ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions"
+        )
         assert_equal(ax.yaxis.get_label().get_text(), "Customers")
-        assert_array_equal([label.get_text() for label in ax.legend_.get_texts()], ["Actual", "Model"])
+        assert_array_equal(
+            [label.get_text() for label in ax.legend_.get_texts()], ["Actual", "Model"]
+        )
         plt.close()
 
     def test_plot_period_transactions_labels(self, bgf):
@@ -101,9 +153,13 @@ class TestPlotting:
 
         assert_allclose([p.get_height() for p in ax.patches], expected, rtol=0.3)
         assert_equal(ax.title.get_text(), "Frequency of Repeat Transactions")
-        assert_equal(ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions")
+        assert_equal(
+            ax.xaxis.get_label().get_text(), "Number of Calibration Period Transactions"
+        )
         assert_equal(ax.yaxis.get_label().get_text(), "Customers")
-        assert_array_equal([label.get_text() for label in ax.legend_.get_texts()], ["A", "B"])
+        assert_array_equal(
+            [label.get_text() for label in ax.legend_.get_texts()], ["A", "B"]
+        )
         plt.close()
 
     def test_plot_frequency_recency_matrix(self, bgf):
@@ -145,7 +201,9 @@ class TestPlotting:
         ax = plotting.plot_frequency_recency_matrix(bgf)
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[row_idx, :].data, row, atol=0.01)  # only test one row for brevity
+        assert_allclose(
+            ar[row_idx, :].data, row, atol=0.01
+        )  # only test one row for brevity
         assert_equal(
             ax.title.get_text(),
             "Expected Number of Future Purchases for 1 Unit of Time,\nby Frequency and Recency of a Customer",
@@ -264,7 +322,9 @@ class TestPlotting:
         ax = plotting.plot_frequency_recency_matrix(bgf, max_recency=100)
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[:, col_idx].data, col, atol=0.01)  # only test one row for brevity
+        assert_allclose(
+            ar[:, col_idx].data, col, atol=0.01
+        )  # only test one row for brevity
         assert_equal(
             ax.title.get_text(),
             "Expected Number of Future Purchases for 1 Unit of Time,\nby Frequency and Recency of a Customer",
@@ -383,7 +443,9 @@ class TestPlotting:
         ax = plotting.plot_frequency_recency_matrix(bgf, max_frequency=100)
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[row_idx, :].data, row, atol=0.01)  # only test one row for brevity
+        assert_allclose(
+            ar[row_idx, :].data, row, atol=0.01
+        )  # only test one row for brevity
         assert_equal(
             ax.title.get_text(),
             "Expected Number of Future Purchases for 1 Unit of Time,\nby Frequency and Recency of a Customer",
@@ -499,10 +561,14 @@ class TestPlotting:
             0.462,
         ]
 
-        ax = plotting.plot_frequency_recency_matrix(bgf, max_frequency=100, max_recency=100)
+        ax = plotting.plot_frequency_recency_matrix(
+            bgf, max_frequency=100, max_recency=100
+        )
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[row_idx, :].data, row, atol=0.01)  # only test one row for brevity
+        assert_allclose(
+            ar[row_idx, :].data, row, atol=0.01
+        )  # only test one row for brevity
         assert_equal(
             ax.title.get_text(),
             "Expected Number of Future Purchases for 1 Unit of Time,\nby Frequency and Recency of a Customer",
@@ -550,8 +616,13 @@ class TestPlotting:
         ax = plotting.plot_probability_alive_matrix(bgf)
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[row_idx, :].data, row, atol=0.01)  # only test one row for brevity
-        assert_equal(ax.title.get_text(), "Probability Customer is Alive,\nby Frequency and Recency of a Customer")
+        assert_allclose(
+            ar[row_idx, :].data, row, atol=0.01
+        )  # only test one row for brevity
+        assert_equal(
+            ax.title.get_text(),
+            "Probability Customer is Alive,\nby Frequency and Recency of a Customer",
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Customer's Historical Frequency")
         assert_equal(ax.yaxis.get_label().get_text(), "Customer's Recency")
         plt.close()
@@ -666,8 +737,13 @@ class TestPlotting:
         ax = plotting.plot_probability_alive_matrix(bgf, max_frequency=100)
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[row_idx, :].data, row, atol=0.01)  # only test one row for brevity
-        assert_equal(ax.title.get_text(), "Probability Customer is Alive,\nby Frequency and Recency of a Customer")
+        assert_allclose(
+            ar[row_idx, :].data, row, atol=0.01
+        )  # only test one row for brevity
+        assert_equal(
+            ax.title.get_text(),
+            "Probability Customer is Alive,\nby Frequency and Recency of a Customer",
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Customer's Historical Frequency")
         assert_equal(ax.yaxis.get_label().get_text(), "Customer's Recency")
         plt.close()
@@ -782,8 +858,13 @@ class TestPlotting:
         ax = plotting.plot_probability_alive_matrix(bgf, max_recency=100)
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[:, col_idx].data, col, atol=0.01)  # only test one column for brevity
-        assert_equal(ax.title.get_text(), "Probability Customer is Alive,\nby Frequency and Recency of a Customer")
+        assert_allclose(
+            ar[:, col_idx].data, col, atol=0.01
+        )  # only test one column for brevity
+        assert_equal(
+            ax.title.get_text(),
+            "Probability Customer is Alive,\nby Frequency and Recency of a Customer",
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Customer's Historical Frequency")
         assert_equal(ax.yaxis.get_label().get_text(), "Customer's Recency")
         plt.close()
@@ -895,11 +976,18 @@ class TestPlotting:
             0.953,
         ]
 
-        ax = plotting.plot_probability_alive_matrix(bgf, max_frequency=100, max_recency=100)
+        ax = plotting.plot_probability_alive_matrix(
+            bgf, max_frequency=100, max_recency=100
+        )
         ar = ax.get_images()[0].get_array()
         assert_array_equal(ar.shape, shape)
-        assert_allclose(ar[:, col_idx].data, col, atol=0.01)  # only test one column for brevity
-        assert_equal(ax.title.get_text(), "Probability Customer is Alive,\nby Frequency and Recency of a Customer")
+        assert_allclose(
+            ar[:, col_idx].data, col, atol=0.01
+        )  # only test one column for brevity
+        assert_equal(
+            ax.title.get_text(),
+            "Probability Customer is Alive,\nby Frequency and Recency of a Customer",
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Customer's Historical Frequency")
         assert_equal(ax.yaxis.get_label().get_text(), "Customer's Recency")
         plt.close()
@@ -1324,7 +1412,9 @@ class TestPlotting:
         assert_allclose(solid_y, solid_y_expected, atol=0.01)
         assert_allclose(dashed_x, dashed_x_expected, atol=0.01)
         assert_allclose(dashed_y, dashed_y_expected, atol=0.01)
-        assert_equal(ax.title.get_text(), "Expected Number of Repeat Purchases per Customer")
+        assert_equal(
+            ax.title.get_text(), "Expected Number of Repeat Purchases per Customer"
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Time Since First Purchase")
         assert_equal(ax.yaxis.get_label().get_text(), "")
         plt.close()
@@ -1752,7 +1842,9 @@ class TestPlotting:
         assert_allclose(dashed_x, dashed_x_expected, atol=0.01)
         assert_allclose(dashed_y, dashed_y_expected, atol=0.01)
         assert_equal(legend.get_texts()[0].get_text(), label)
-        assert_equal(ax.title.get_text(), "Expected Number of Repeat Purchases per Customer")
+        assert_equal(
+            ax.title.get_text(), "Expected Number of Repeat Purchases per Customer"
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Time Since First Purchase")
         assert_equal(ax.yaxis.get_label().get_text(), "")
         plt.close()
@@ -1970,7 +2062,9 @@ class TestPlotting:
 
         assert_allclose(x, x_expected, atol=0.01)
         assert_allclose(y, y_expected, atol=0.01)
-        assert_equal(plt.gcf()._suptitle.get_text(), "Heterogeneity in Transaction Rate")
+        assert_equal(
+            plt.gcf()._suptitle.get_text(), "Heterogeneity in Transaction Rate"
+        )
         assert_equal(ax.title.get_text(), "mean: 0.055, var: 0.012")
         assert_equal(ax.xaxis.get_label().get_text(), "Transaction Rate")
         assert_equal(ax.yaxis.get_label().get_text(), "Density")
@@ -2189,17 +2283,23 @@ class TestPlotting:
         print(y)
         assert_allclose(x, x_expected, atol=0.1)
         assert_allclose(y, y_expected, atol=0.1)
-        assert_equal(plt.gcf()._suptitle.get_text(), "Heterogeneity in Dropout Probability")
+        assert_equal(
+            plt.gcf()._suptitle.get_text(), "Heterogeneity in Dropout Probability"
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Dropout Probability p")
         assert_equal(ax.yaxis.get_label().get_text(), "Density")
         plt.close()
 
-    def test_plot_calibration_purchases_vs_holdout_purchases(self, transaction_data, bgf):
+    def test_plot_calibration_purchases_vs_holdout_purchases(
+        self, transaction_data, bgf
+    ):
         holdout_expected = [0.161, 0.233, 0.348, 0.544, 0.710, 0.704, 1.606]
         predictions_expected = [0.270, 0.294, 0.402, 0.422, 0.706, 0.809, 1.019]
         labels = ["frequency_holdout", "model_predictions"]
 
-        summary = utils.calibration_and_holdout_data(transaction_data, "id", "date", "2014-09-01", "2014-12-31")
+        summary = utils.calibration_and_holdout_data(
+            transaction_data, "id", "date", "2014-09-01", "2014-12-31"
+        )
         bgf.fit(summary["frequency_cal"], summary["recency_cal"], summary["T_cal"])
 
         ax = plotting.plot_calibration_purchases_vs_holdout_purchases(bgf, summary)
@@ -2212,20 +2312,31 @@ class TestPlotting:
         assert_allclose(holdout, holdout_expected, atol=0.01)
         assert_allclose(predictions, predictions_expected, atol=0.01)
         assert_array_equal([e.get_text() for e in legend.get_texts()], labels)
-        assert_equal(ax.title.get_text(), "Actual Purchases in Holdout Period vs Predicted Purchases")
+        assert_equal(
+            ax.title.get_text(),
+            "Actual Purchases in Holdout Period vs Predicted Purchases",
+        )
         assert_equal(ax.xaxis.get_label().get_text(), "Purchases in calibration period")
-        assert_equal(ax.yaxis.get_label().get_text(), "Average of Purchases in Holdout Period")
+        assert_equal(
+            ax.yaxis.get_label().get_text(), "Average of Purchases in Holdout Period"
+        )
         plt.close()
 
-    def test_plot_calibration_purchases_vs_holdout_purchases_time_since_last_purchase(self, transaction_data, bgf):
+    def test_plot_calibration_purchases_vs_holdout_purchases_time_since_last_purchase(
+        self, transaction_data, bgf
+    ):
         holdout_expected = [3.954, 3.431, 3.482, 3.484, 2.75, 2.289, 1.968]
         predictions_expected = [4.345, 2.993, 3.236, 2.677, 2.240, 2.608, 2.430]
         labels = ["frequency_holdout", "model_predictions"]
 
-        summary = utils.calibration_and_holdout_data(transaction_data, "id", "date", "2014-09-01", "2014-12-31")
+        summary = utils.calibration_and_holdout_data(
+            transaction_data, "id", "date", "2014-09-01", "2014-12-31"
+        )
         bgf.fit(summary["frequency_cal"], summary["recency_cal"], summary["T_cal"])
 
-        ax = plotting.plot_calibration_purchases_vs_holdout_purchases(bgf, summary, kind="time_since_last_purchase")
+        ax = plotting.plot_calibration_purchases_vs_holdout_purchases(
+            bgf, summary, kind="time_since_last_purchase"
+        )
 
         lines = ax.lines
         legend = ax.legend_
@@ -2235,7 +2346,14 @@ class TestPlotting:
         assert_allclose(holdout, holdout_expected, atol=0.01)
         assert_allclose(predictions, predictions_expected, atol=0.01)
         assert_array_equal([e.get_text() for e in legend.get_texts()], labels)
-        assert_equal(ax.title.get_text(), "Actual Purchases in Holdout Period vs Predicted Purchases")
-        assert_equal(ax.xaxis.get_label().get_text(), "Time since user made last purchase")
-        assert_equal(ax.yaxis.get_label().get_text(), "Average of Purchases in Holdout Period")
+        assert_equal(
+            ax.title.get_text(),
+            "Actual Purchases in Holdout Period vs Predicted Purchases",
+        )
+        assert_equal(
+            ax.xaxis.get_label().get_text(), "Time since user made last purchase"
+        )
+        assert_equal(
+            ax.yaxis.get_label().get_text(), "Average of Purchases in Holdout Period"
+        )
         plt.close()

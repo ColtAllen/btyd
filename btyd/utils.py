@@ -6,7 +6,6 @@ import dill
 
 import numpy
 import numpy.typing as npt
-from scipy.stats import wasserstein_distance
 
 
 pd.options.mode.chained_assignment = None
