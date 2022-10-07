@@ -51,6 +51,7 @@ class TestGammaGammaModel:
             "<btyd.GammaGammaModel: Parameters {'p': 6.3, 'q': 3.7, 'v': 15.6} estimated with 946 customers.>",
             "<btyd.GammaGammaModel: Parameters {'p': 6.3, 'q': 3.7, 'v': 15.5} estimated with 946 customers.>",
             "<btyd.GammaGammaModel: Parameters {'p': 6.4, 'q': 3.7, 'v': 15.5} estimated with 946 customers.>",
+            "<btyd.GammaGammaModel: Parameters {'p': 6.4, 'q': 3.7, 'v': 15.4} estimated with 946 customers.>"
         ]
         assert repr(fitted_ggm) in expected
 
