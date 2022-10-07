@@ -194,7 +194,7 @@ class TestGammaGammaModel:
             freq="H",
         )
 
-        np.testing.assert_allclose(ggm_clv.mean(), 841, atol=11.)
+        np.testing.assert_allclose(ggm_clv.mean(), 841, atol=21.)
 
     def test_quantities_of_interest(self):
         """
