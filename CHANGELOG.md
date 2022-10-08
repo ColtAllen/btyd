@@ -1,5 +1,13 @@
 # Changelog
 
+### 0.1beta2
+- `GammaGammaModel` Bayesian implementation of Gamma-Gamma model added.
+- Input validation added to 'BaseModel' class.
+- Fixed array broadcasting bug in `BetaGeoModel`.
+- Revised frequency and monetary value descriptions in User Guide.
+- Revised SQL code for monetary value calculations in documentation.
+- Added required dependencies to `setup.cfg`.
+
 ### 0.1beta1
 - Bayesian predictions now supported, enabling entire probability distributions as well as point estimates for predictive outputs.
 - Streamlined user API to minimize input arguments. All predictive methods are now also called from a single function.
