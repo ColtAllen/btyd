@@ -27,7 +27,7 @@ If this is too abstract, consider these applications:
 
 
 ## Installation
-
+BTYD installation requires Python 3.8 or 3.9:
 ```bash
 pip install btyd
 ```
