@@ -21,9 +21,9 @@ ID
 ## RFM Data Format
 All models require datasets in RFM (Recency, Frequency, Monetary Value) format:
 
-- `frequency` represents the number of *repeat* purchases the customer has made. This means that it's one less than the total number of purchases. This is actually slightly wrong. It's the count of time periods the customer had a purchase in. So if using days as units, then it's the count of days the customer had a purchase on.
+- `frequency` represents the number of *repeat* purchases the customer has made, or one less than the total number of purchases. Repeat purchases made within the same time period are only counted as one purchase.
 - `recency` represents the age of the customer when they made their most recent purchases. This is equal to the duration between a customer's first purchase and their latest purchase. (Thus if they have made only 1 purchase, the recency is 0.)
-- `monetary_value` represents the average value of a given customer's purchases. This is equal to the sum of all a customer's purchases divided by the total number of purchases. Note that the denominator here is different than the `frequency` described above.
+- `monetary_value` represents the average value of a given customer's *repeat* purchases. Customers who have only made a single purchase have monetary values of zero.
 - `T` represents the age of the customer in whatever time units chosen (weekly, in the above dataset). This is equal to the duration between a customer's first purchase and the end of the period under study.
 
 For models using covariates, additional columns may be added.
