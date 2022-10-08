@@ -2,7 +2,7 @@
 
 ### 0.1beta2
 - `GammaGammaModel` Bayesian implementation of Gamma-Gamma model added.
-- Input validation added to 'BaseModel' class.
+- Input validation added to `BaseModel` class.
 - Fixed array broadcasting bug in `BetaGeoModel`.
 - Revised frequency and monetary value descriptions in User Guide.
 - Revised SQL code for monetary value calculations in documentation.
