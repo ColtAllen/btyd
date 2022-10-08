@@ -4,18 +4,27 @@
 
 Let's review what our variables mean:
 
-- `frequency` represents the number of *repeat* purchases the customer has made. This means that it's one less than the total number of purchases. This is actually slightly wrong. It's the count of distinct time periods the customer had a purchase in. So if using days as units, then it's the count of distinct days the customer had a purchase on.   
-- `T` represents the age of the customer in whatever time units chosen. This is equal to the duration between a customer's first purchase and the end of the period under study.
+- `frequency` represents the number of *repeat* purchases the customer has made, or one less than the total number of purchases. Repeat purchases made within the same time period are only counted as one purchase.
 - `recency` represents the age of the customer when they made their most recent purchases. This is equal to the duration between a customer's first purchase and their latest purchase. (Thus if they have made only 1 purchase, the recency is 0.)
+- `monetary_value` represents the average value of a given customer's *repeat* purchases. Customers who have only made a single purchase have monetary values of zero.
+- `T` represents the age of the customer in whatever time units chosen (weekly, in the above dataset). This is equal to the duration between a customer's first purchase and the end of the period under study.
 
 Thus, executing a query against a transactional dataset, called `orders`, in a SQL-store may look like:
 
 ```sql
 SELECT
   customer_id,
-  COUNT(distinct date(transaction_at)) - 1 as frequency,
+  COUNT(DISTINCT DATE(transaction_at)) - 1 as frequency,
   datediff('day', MIN(transaction_at), MAX(transaction_at)) as recency,
-  AVG(total_price) as monetary_value,
+  CASE                                              -- MONETARY VALUE CALCULATION
+      WHEN COUNT(DISTINCT transaction_at) = 1 THEN 0    -- 0 if only one order
+      ELSE
+        SUM(
+          CASE WHEN first_transaction = transaction_at THEN 0  -- daily average of all but first order
+          ELSE salesamount
+          END
+          ) / (COUNT(DISTINCT transaction_at) - 1)
+      END as monetary_value  
   datediff('day', CURRENT_DATE, MIN(transaction_at)) as T
 FROM orders
 GROUP BY customer_id
