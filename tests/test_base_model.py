@@ -16,6 +16,7 @@ import pymc as pm
 import aesara.tensor as at
 
 import btyd
+from btyd.models import BaseModel, PredictMixin
 
 
 def test_deprecated():
@@ -36,7 +37,7 @@ def test_deprecated():
         assert "deprecated" in str(w[-1].message)
 
 
-@pytest.mark.parametrize("obj", [btyd.BaseModel, btyd.PredictMixin])
+@pytest.mark.parametrize("obj", [BaseModel, PredictMixin])
 def test_isabstract(obj):
     """
     GIVEN the BaseModel and PredictMixin model factory objects,
@@ -55,7 +56,7 @@ class TestBaseModel:
         THEN a string representation containing library name, module and model class are returned.
         """
 
-        assert repr(btyd.BaseModel) == "<class 'btyd.models.BaseModel'>"
+        assert repr(BaseModel) == "<class 'btyd.models.BaseModel'>"
 
     def test_abstract_methods(self):
         """
@@ -65,10 +66,10 @@ class TestBaseModel:
         """
 
         # Override abstract methods:
-        btyd.BaseModel.__abstractmethods__ = set()
+        BaseModel.__abstractmethods__ = set()
 
         # Create concrete class for testing:
-        class ConcreteBaseModel(btyd.BaseModel):
+        class ConcreteBaseModel(BaseModel):
             pass
 
         # Instantiate concrete testing class and call all abstrast methods:
@@ -89,7 +90,7 @@ class TestBaseModel:
         """
         posterior_distribution = np.array([0.456, 0.358, 1.8, 2.0, 0.999])
         samples = 7
-        posterior_samples = btyd.BaseModel._sample(posterior_distribution, samples)
+        posterior_samples = BaseModel._sample(posterior_distribution, samples)
         assert len(posterior_samples) == samples
 
         # Convert numpy arrays to sets to test intersections of elements.
@@ -104,7 +105,7 @@ class TestBaseModel:
         THEN five numpy arrays should be returned.
         """
 
-        parsed = btyd.BaseModel._dataframe_parser(cdnow)
+        parsed = BaseModel._dataframe_parser(cdnow)
         assert len(parsed) == 5
 
     def test_check_inputs(self):
@@ -119,26 +120,26 @@ class TestBaseModel:
         T = np.array([5, 6, 15])
         monetary_value = np.array([2.3, 490, 33.33])
         assert (
-            btyd.BaseModel()._check_inputs(frequency, recency, T, monetary_value) is None
+            BaseModel()._check_inputs(frequency, recency, T, monetary_value) is None
         )
 
         with pytest.raises(ValueError):
             bad_recency = T + 1
-            btyd.BaseModel()._check_inputs(frequency, bad_recency, T)
+            BaseModel()._check_inputs(frequency, bad_recency, T)
 
         with pytest.raises(ValueError):
             bad_recency = recency.copy()
             bad_recency[0] = 1
-            btyd.BaseModel()._check_inputs(frequency, bad_recency, T)
+            BaseModel()._check_inputs(frequency, bad_recency, T)
 
         with pytest.raises(ValueError):
             bad_freq = np.array([0, 0.5, 2])
-            btyd.BaseModel()._check_inputs(bad_freq, recency, T)
+            BaseModel()._check_inputs(bad_freq, recency, T)
 
         # with pytest.raises(ValueError):
         #     bad_monetary_value = monetary_value.copy()
         #     bad_monetary_value[0] = 0
-        #     btyd.BaseModel()._check_inputs(frequency, recency, T, bad_monetary_value)
+        #     BaseModel()._check_inputs(frequency, recency, T, bad_monetary_value)
 
 
 class TestPredictMixin:
@@ -150,10 +151,10 @@ class TestPredictMixin:
         """
 
         # Override abstract methods:
-        btyd.PredictMixin.__abstractmethods__ = set()
+        PredictMixin.__abstractmethods__ = set()
 
         # Create concrete class for testing:
-        class ConcretePredictMixin(btyd.PredictMixin):
+        class ConcretePredictMixin(PredictMixin):
             pass
 
         # Instantiate concrete testing class and call all abstrast methods:

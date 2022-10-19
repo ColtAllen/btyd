@@ -7,8 +7,9 @@ from .fitters.modified_beta_geo_fitter import ModifiedBetaGeoFitter
 from .fitters.pareto_nbd_fitter import ParetoNBDFitter
 from .fitters.gamma_gamma_fitter import GammaGammaFitter
 from .fitters.beta_geo_covar_fitter import BetaGeoCovarsFitter
-from .models import BaseModel, PredictMixin
+# from .models import BaseModel, PredictMixin
 from .models.beta_geo_model import BetaGeoModel
+#from .models.mod_beta_geo_model import ModBetaGeoModel
 from .models.gamma_gamma_model import GammaGammaModel
 
 __version__ = "0.1b2"
@@ -23,6 +24,7 @@ __all__ = (
     "BetaGeoCovarsFitter",
     "BetaGeoModel",
     "GammaGammaModel",
+    "ModBetaGeoModel",
     )
 
 def deprecated():
