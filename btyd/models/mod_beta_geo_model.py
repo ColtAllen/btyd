@@ -71,7 +71,7 @@ class ModBetaGeoModel(PredictMixin["ModBetaGeoModel"], BaseModel["ModBetaGeoMode
         if hyperparams is None:
             self._hyperparams = {
                 "alpha_prior_alpha": 1.0,
-                "alpha_prior_beta": 6.0,
+                "alpha_prior_beta": 2.0,
                 "r_prior_alpha": 1.0,
                 "r_prior_beta": 1.0,
                 "phi_prior_lower": 0.0,
