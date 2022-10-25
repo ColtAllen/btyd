@@ -71,13 +71,13 @@ class ModBetaGeoModel(PredictMixin["ModBetaGeoModel"], BaseModel["ModBetaGeoMode
         if hyperparams is None:
             self._hyperparams = {
                 "alpha_prior_alpha": 1.0,
-                "alpha_prior_beta": 2.0,
+                "alpha_prior_beta": 1.7,
                 "r_prior_alpha": 1.0,
                 "r_prior_beta": 1.0,
                 "phi_prior_lower": 0.0,
                 "phi_prior_upper": 1.0,
-                "kappa_prior_alpha": 1.0,
-                "kappa_prior_m": 1.5,
+                "kappa_prior_alpha": 1.5,
+                "kappa_prior_m": 1.0,
             }
         else:
             self._hyperparams = hyperparams
@@ -419,10 +419,10 @@ class ModBetaGeoModel(PredictMixin["ModBetaGeoModel"], BaseModel["ModBetaGeoMode
 
         Parameters
         ----------
-        t: numpy.ndarray
-            Array containing times to calculate the expectation of the customer population.
-        n: numpy.ndarray
-            Array containing number of transaction expectations of the customer population.
+        t: float
+            Times to calculate the expectation of the customer population.
+        n: int
+            Number of transactions expected of the customer population.
         posterior: bool
             Flag to sample from parameter posteriors. Set to True to return predictions as probability distributions.
         posterior_draws: int
