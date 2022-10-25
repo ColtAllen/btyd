@@ -103,14 +103,18 @@ class ModifiedBetaGeoFitter(BetaGeoFitter):
             frequency, recency, T, weights, initial_params, verbose, tol, index=index, **kwargs
         )
         # this needs to be reassigned from the parent method
-        self.generate_new_data = lambda size=1: modified_beta_geometric_nbd_model(
-            T, *self._unload_params("r", "alpha", "a", "b"), size=size
-        )
+        self.generate_new_data_params = T
 
         self.variance_matrix_ = self._compute_variance_matrix()
         self.standard_errors_ = self._compute_standard_errors()
         self.confidence_intervals_ = self._compute_confidence_intervals()
         return self
+
+    def generate_new_data(self, size=1):
+        T = self.generate_new_data_params
+        return modified_beta_geometric_nbd_model(
+            T, *self._unload_params("r", "alpha", "a", "b"), size=size
+        )
 
     @staticmethod
     def _negative_log_likelihood(log_params, freq, rec, T, weights, penalizer_coef):

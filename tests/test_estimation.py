@@ -829,32 +829,6 @@ class TestBetaGeoFitter:
         # remove saved model
         os.remove(PATH_SAVE_BGNBD_MODEL)
 
-    def test_save_load_no_generate_data(self, cdnow):
-        """Test saving and loading model for BG/NBD without generate_new_data method."""
-        bgf = lt.BetaGeoFitter(penalizer_coef=0.0)
-        bgf.fit(cdnow["frequency"], cdnow["recency"], cdnow["T"])
-        bgf.save_model(PATH_SAVE_BGNBD_MODEL, save_generate_data_method=False)
-
-        bgf_new = lt.BetaGeoFitter()
-        bgf_new.load_model(PATH_SAVE_BGNBD_MODEL)
-        assert bgf_new.__dict__["penalizer_coef"] == bgf.__dict__["penalizer_coef"]
-        assert bgf_new.__dict__["_scale"] == bgf.__dict__["_scale"]
-        assert bgf_new.__dict__["params_"].equals(bgf.__dict__["params_"])
-        assert (
-            bgf_new.__dict__["_negative_log_likelihood_"]
-            == bgf.__dict__["_negative_log_likelihood_"]
-        )
-        assert bgf_new.__dict__["predict"](1, 1, 2, 5) == bgf.__dict__["predict"](
-            1, 1, 2, 5
-        )
-        assert bgf_new.expected_number_of_purchases_up_to_time(
-            1
-        ) == bgf.expected_number_of_purchases_up_to_time(1)
-
-        assert bgf_new.__dict__["generate_new_data"] is None
-        # remove saved model
-        os.remove(PATH_SAVE_BGNBD_MODEL)
-
     def test_save_load_no_data_replace_with_empty_str(self, cdnow):
         """Test saving and loading model for BG/NBD without data with replaced value empty str."""
         bgf = lt.BetaGeoFitter(penalizer_coef=0.0)
@@ -1326,9 +1300,7 @@ class TestBetaGeoCovarsFitter:
         X_tr = np.ones((cdnow.shape[0], 1))
         X_do = np.ones((cdnow.shape[0], 1))
         bgcf.fit(cdnow["frequency"], cdnow["recency"], cdnow["T"], X_tr, X_do)
-        bgcf.save_model(
-            PATH_SAVE_BGNBD_MODEL, save_data=False, save_generate_data_method=False
-        )
+        bgcf.save_model(PATH_SAVE_BGNBD_MODEL, save_data=False)
 
         bgcf_new = lt.BetaGeoCovarsFitter()
         bgcf_new.load_model(PATH_SAVE_BGNBD_MODEL)
@@ -1346,7 +1318,6 @@ class TestBetaGeoCovarsFitter:
             1, 1, 1
         ) == bgcf.expected_number_of_purchases_up_to_time(1, 1, 1)
         assert bgcf_new.__dict__["data"] is None
-        assert bgcf_new.__dict__["generate_new_data"] is None
         # remove saved model
         os.remove(PATH_SAVE_BGNBD_MODEL)
 

@@ -155,11 +155,15 @@ class BetaGeoCovarsFitter(BaseFitter):
         if index is not None:
             self.data.index = index
 
-        self.generate_new_data = lambda size=1: beta_geometric_nbd_model(
-            T, *self._unload_params('r', 'alpha0', 'a0', 'b0'), size=size)
+        self.generate_new_data_params = T
 
         self.predict = self.conditional_expected_number_of_purchases_up_to_time
         return self
+
+    def generate_new_data(self, size=1):
+        T = self.generate_new_data_params
+        return beta_geometric_nbd_model(
+            T, *self._unload_params('r', 'alpha0', 'a0', 'b0'), size=size)
 
     @staticmethod
     def _negative_log_likelihood(

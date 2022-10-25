@@ -148,9 +148,7 @@ class BetaGeoFitter(BaseFitter):
 
         self.data = pd.DataFrame({"frequency": frequency, "recency": recency, "T": T, "weights": weights}, index=index)
 
-        self.generate_new_data = lambda size=1: beta_geometric_nbd_model(
-            T, *self._unload_params("r", "alpha", "a", "b"), size=size
-        )
+        self.generate_new_data_params = T
 
         self.predict = self.conditional_expected_number_of_purchases_up_to_time
 
@@ -159,6 +157,12 @@ class BetaGeoFitter(BaseFitter):
         self.confidence_intervals_ = self._compute_confidence_intervals()
 
         return self
+
+    def generate_new_data(self, size=1):
+        T = self.generate_new_data_params
+        return beta_geometric_nbd_model(
+            T, *self._unload_params("r", "alpha", "a", "b"), size=size
+        )
 
     @staticmethod
     def _negative_log_likelihood(

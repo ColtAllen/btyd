@@ -164,17 +164,21 @@ class BetaGeoBetaBinomFitter(BaseFitter):
             {"frequency": frequency, "recency": recency, "n_periods": n_periods, "weights": weights}, index=index
         )
 
-        self.generate_new_data = lambda size=1: beta_geometric_beta_binom_model(
-            # Making a large array replicating n by n_custs having n.
-            np.array(sum([n_] * n_cust for (n_, n_cust) in zip(n_periods, weights))),
-            *self._unload_params("alpha", "beta", "gamma", "delta"),
-            size=size
-        )
+        self.generate_new_data_params = (n_periods, weights)
 
         self.variance_matrix_ = self._compute_variance_matrix()
         self.standard_errors_ = self._compute_standard_errors()
         self.confidence_intervals_ = self._compute_confidence_intervals()
         return self
+
+    def generate_new_data(self, size=1):
+        n_periods, weights = self.generate_new_data_params
+        return beta_geometric_beta_binom_model(
+            # Making a large array replicating n by n_custs having n.
+            np.array(sum([n_] * n_cust for (n_, n_cust) in zip(n_periods, weights))),
+            *self._unload_params("alpha", "beta", "gamma", "delta"),
+            size=size
+        )
 
     def conditional_expected_number_of_purchases_up_to_time(self, m_periods_in_future, frequency, recency, n_periods):
         r"""
