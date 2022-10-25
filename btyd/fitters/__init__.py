@@ -3,7 +3,7 @@
 import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
-import dill
+import pickle
 import numpy as np
 import pandas as pd
 from textwrap import dedent
@@ -36,7 +36,7 @@ class BaseFitter(object):
             raise ValueError("Model has not been fit yet. Please call the .fit" " method first.")
         return [self.params_[x] for x in args]
 
-    def save_model(self, path, save_data=True, save_generate_data_method=True, values_to_save=None):
+    def save_model(self, path, save_data=True, values_to_save=None):
         """
         Save model with dill package.
 
@@ -46,15 +46,12 @@ class BaseFitter(object):
             Path where to save model.
         save_data: bool, optional
             Whether to save data from fitter.data to pickle object
-        save_generate_data_method: bool, optional
-            Whether to save generate_new_data method (if it exists) from
-            fitter.generate_new_data to pickle object.
         values_to_save: list, optional
             Placeholders for original attributes for saving object. If None
             will be extended to attr_list length like [None] * len(attr_list)
 
         """
-        attr_list = ["data" * (not save_data), "generate_new_data" * (not save_generate_data_method)]
+        attr_list = ["data" * (not save_data), "generate_new_data"]
         _save_obj_without_attr(self, attr_list, path, values_to_save=values_to_save)
 
     def load_model(self, path):
@@ -68,7 +65,7 @@ class BaseFitter(object):
 
         """
         with open(path, "rb") as in_file:
-            self.__dict__.update(dill.load(in_file).__dict__)
+            self.__dict__.update(pickle.load(in_file).__dict__)
 
     def _compute_variance_matrix(self):
         params_ = self.params_

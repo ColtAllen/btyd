@@ -2,7 +2,7 @@ from __future__ import division
 
 import autograd.numpy as np
 import pandas as pd
-import dill
+import pickle
 
 import numpy
 import numpy.typing as npt
@@ -674,7 +674,7 @@ def _save_obj_without_attr(
             setattr(obj, attr, val_save)
 
     with open(path, "wb") as out_file:
-        dill.dump(obj, out_file)
+        pickle.dump(obj, out_file)
 
     for attr, item in saved_attr_dict.items():
         setattr(obj, attr, item)

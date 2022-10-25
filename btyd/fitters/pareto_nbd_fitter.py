@@ -147,13 +147,17 @@ class ParetoNBDFitter(BaseFitter):
         self.params_["beta"] /= self._scale
 
         self.data = DataFrame({"frequency": frequency, "recency": recency, "T": T, "weights": weights}, index=index)
-        self.generate_new_data = lambda size=1: pareto_nbd_model(
-            T, *self._unload_params("r", "alpha", "s", "beta"), size=size
-        )
+        self.generate_new_data_params = T
 
         self.predict = self.conditional_expected_number_of_purchases_up_to_time
 
         return self
+
+    def generate_new_data(self, size=1):
+        T = self.generate_new_data_params
+        return pareto_nbd_model(
+            T, *self._unload_params("r", "alpha", "s", "beta"), size=size
+        )
 
     @staticmethod
     def _log_A_0(
