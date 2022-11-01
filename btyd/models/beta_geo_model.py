@@ -2,7 +2,7 @@ from __future__ import generator_stop
 from __future__ import annotations
 import warnings
 
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Generic, TypeVar
 
 import pandas as pd
 import numpy as np
@@ -18,8 +18,9 @@ from scipy.special import expit
 from . import BaseModel, PredictMixin
 from ..generate_data import beta_geometric_nbd_model
 
+SELF = TypeVar("SELF")
 
-class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"]):
+class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"], Generic[SELF]):
     r"""
     Also known as the BG/NBD model.
     Based on [1]_, this model has the following assumptions:

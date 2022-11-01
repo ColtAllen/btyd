@@ -14,11 +14,11 @@ import aesara.tensor as at
 from scipy.special import beta, gamma
 from scipy.special import hyp2f1
 
-from . import BaseModel, PredictMixin
+from btyd import BetaGeoModel
 from ..generate_data import modified_beta_geometric_nbd_model
 
 
-class ModBetaGeoModel(PredictMixin["ModBetaGeoModel"], BaseModel["ModBetaGeoModel"]):
+class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
     r"""
     Also known as the MBG/NBD model.
 
@@ -95,43 +95,8 @@ class ModBetaGeoModel(PredictMixin["ModBetaGeoModel"], BaseModel["ModBetaGeoMode
             Compiled probabilistic PyMC model to estimate model parameters.
         """
 
-        with pm.Model(name=f"{self.__class__.__name__}") as self.model:
-            # Priors for lambda parameters.
-            alpha_prior = pm.Weibull(
-                name="alpha",
-                alpha=self._hyperparams.get("alpha_prior_alpha"),
-                beta=self._hyperparams.get("alpha_prior_beta"),
-            )
-            r_prior = pm.Weibull(
-                name="r",
-                alpha=self._hyperparams.get("r_prior_alpha"),
-                beta=self._hyperparams.get("r_prior_beta"),
-            )
-
-            # Heirarchical pooling of hyperparams for beta parameters.
-            phi_prior = pm.Uniform(
-                "phi",
-                lower=self._hyperparams.get("phi_prior_lower"),
-                upper=self._hyperparams.get("phi_prior_upper"),
-            )
-            kappa_prior = pm.Pareto(
-                "kappa",
-                alpha=self._hyperparams.get("kappa_prior_alpha"),
-                m=self._hyperparams.get("kappa_prior_m"),
-            )
-
-            # Beta parameters.
-            a = pm.Deterministic("a", phi_prior * kappa_prior)
-            b = pm.Deterministic("b", (1.0 - phi_prior) * kappa_prior)
-
-            logp = pm.Potential(
-                "loglike",
-                self._log_likelihood(
-                    self._frequency, self._recency, self._T, a, b, alpha_prior, r_prior
-                ),
-            )
-
-        return self.model
+        # Call the parent BetaGeoModel method with the ModBetaGeoModel log-likelihood:
+        return super(ModBetaGeoModel, self)._model()
 
     def _log_likelihood(
         self,
