@@ -12,9 +12,6 @@ import pandas as pd
 import pymc as pm
 import aesara.tensor as at
 import arviz as az
-import xarray as xr
-
-from ..utils import _check_inputs
 
 
 SELF = TypeVar("SELF")
@@ -91,12 +88,7 @@ class BaseModel(ABC, Generic[SELF]):
             _,
         ) = self._dataframe_parser(rfm_df)
 
-        self._check_inputs(
-            frequency=self._frequency,
-            recency=self._recency,
-            T=self._T,
-            monetary_value=self._monetary_value,
-        )
+        self._check_inputs(self._frequency,self._recency, self._T, self._monetary_value)
 
         with self._model():
             self._idata = pm.sample(
@@ -232,10 +224,11 @@ class BaseModel(ABC, Generic[SELF]):
         frequency = rfm_df["FREQUENCY"].values
         recency = rfm_df["RECENCY"].values
         T = rfm_df["T"].values
-        monetary_value = rfm_df["MONETARY_VALUE"].values
 
-        # TODO: Add monetary_value to this, and consider ID continengent on predict() outputs.
-        _check_inputs(frequency, recency, T)
+        if "MONETARY_VALUE" in rfm_df.columns:
+            monetary_value = rfm_df["MONETARY_VALUE"].values
+        else:
+            monetary_value = None
 
         return frequency, recency, T, monetary_value, customer
 
@@ -267,13 +260,14 @@ class BaseModel(ABC, Generic[SELF]):
 
         The checks go sequentially from recency, to frequency and monetary value:
 
-        - recency > T.
+        - recency > T
+        - frequency > T
         - recency[frequency == 0] != 0)
         - recency < 0
         - zero length vector in frequency, recency or T
-        - non-integer values in the frequency vector.
-        - non-positive (<= 0) values in the monetary_value vector for the Gamma-Gamma model.
-        - non-positive (<= 0) values in the frequency vector for the Gamma-Gamma model.
+        - non-integer values in the frequency vector
+        - non-positive (<= 0) values in the monetary_value vector for the Gamma-Gamma model
+        - non-positive (<= 0) values in the frequency vector for the Gamma-Gamma model
 
         Parameters
         ----------
@@ -288,10 +282,15 @@ class BaseModel(ABC, Generic[SELF]):
         """
 
         if recency is not None:
-            if T is not None and np.all(recency > T):
-                raise ValueError(
-                    "Some values in recency vector are larger than T vector."
-                )
+            if T is not None:
+                if np.all(recency > T):
+                    raise ValueError(
+                        "Some values in recency vector are larger than T vector."
+                    )
+                if np.any(frequency > T):
+                    raise ValueError(
+                        "Transaction time periods exceed total time periods."
+                    )
             if np.any(recency[frequency == 0] != 0):
                 raise ValueError(
                     "There exist non-zero recency values when frequency is zero."
@@ -315,8 +314,6 @@ class BaseModel(ABC, Generic[SELF]):
                 raise ValueError(
                     "There exist non-positive (<= 0) values in the frequency vector."
                 )
-        # TODO: raise warning if np.any(freqency > T) as this means that there are
-        # more order-periods than periods.
 
 
 class PredictMixin(ABC, Generic[SELF]):
@@ -420,6 +417,9 @@ class PredictMixin(ABC, Generic[SELF]):
                 self._monetary_value,
                 _,
             ) = self._dataframe_parser(rfm_df)
+        
+            # Inputs were already checked during model fitting, and only need to be checked again if a new rfm_df is provided.
+            self._check_inputs(self._frequency,self._recency, self._T, self._monetary_value)
 
         # TODO: Add exception handling for method argument.
         predictions = self._quantities_of_interest.get(method)(
