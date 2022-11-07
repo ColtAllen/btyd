@@ -623,7 +623,13 @@ class TestParetoNBDFitter:
             np.array(pnbd._unload_params("r", "alpha", "s", "beta")),
             decimal=2,
         )
+    
+    def test_conditional_probability_of_being_alive_up_to_time(self, cdnow):
+            ptf = lt.ParetoNBDFitter()
+            ptf.fit(cdnow["frequency"], cdnow["recency"], cdnow["T"])
 
+            p_alive_to_t = ptf.conditional_probability_of_being_alive_up_to_time(10.00, 26.00, 30.86, 31.00)
+            assert round(p_alive_to_t, 4) == 0.8783
 
 class TestBetaGeoFitter:
     def test_sum_of_scalar_inputs_to_negative_log_likelihood_is_equal_to_array(self):
