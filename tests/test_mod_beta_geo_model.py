@@ -86,6 +86,7 @@ class TestModBetaGeoModel:
         expected = [
             "<btyd.ModBetaGeoModel: Parameters {'alpha': 6.2, 'r': 0.5, 'a': 0.9, 'b': 1.6} estimated with 2357 customers.>",
             "<btyd.ModBetaGeoModel: Parameters {'alpha': 6.2, 'r': 0.5, 'a': 0.9, 'b': 1.7} estimated with 2357 customers.>",
+            "<btyd.ModBetaGeoModel: Parameters {'alpha': 6.3, 'r': 0.5, 'a': 0.9, 'b': 1.6} estimated with 2357 customers.>",
         ]
         assert repr(fitted_mbgm) in expected
 
