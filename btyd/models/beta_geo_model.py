@@ -20,7 +20,10 @@ from ..generate_data import beta_geometric_nbd_model
 
 SELF = TypeVar("SELF")
 
-class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"], Generic[SELF]):
+
+class BetaGeoModel(
+    PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"], Generic[SELF]
+):
     r"""
     Also known as the BG/NBD model.
     Based on [1]_, this model has the following assumptions:
@@ -384,9 +387,9 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"], Gene
             param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]
         ):
 
-            log_div = (r + frequency) * np.log((alpha + T) / (alpha + recency)) + np.log(
-                a / (b + np.maximum(frequency, 1) - 1)
-            )
+            log_div = (r + frequency) * np.log(
+                (alpha + T) / (alpha + recency)
+            ) + np.log(a / (b + np.maximum(frequency, 1) - 1))
 
             cond_alive = np.atleast_1d(np.where(frequency == 0, 1.0, expit(-log_div)))
             cond_p_alive.append(cond_alive)
@@ -451,8 +454,10 @@ class BetaGeoModel(PredictMixin["BetaGeoModel"], BaseModel["BetaGeoModel"], Gene
         ):
 
             hyp = hyp2f1(r, b, a + b - 1, t / (alpha + t))
-        
-            expected_purchase = (a + b - 1) / (a - 1) * (1 - hyp * (alpha / (alpha + t)) ** r)
+
+            expected_purchase = (
+                (a + b - 1) / (a - 1) * (1 - hyp * (alpha / (alpha + t)) ** r)
+            )
             expected_purchases.append(expected_purchase)
 
         return np.array(expected_purchases)

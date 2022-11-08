@@ -88,7 +88,9 @@ class BaseModel(ABC, Generic[SELF]):
             _,
         ) = self._dataframe_parser(rfm_df)
 
-        self._check_inputs(self._frequency,self._recency, self._T, self._monetary_value)
+        self._check_inputs(
+            self._frequency, self._recency, self._T, self._monetary_value
+        )
 
         with self._model():
             self._idata = pm.sample(
@@ -187,8 +189,10 @@ class BaseModel(ABC, Generic[SELF]):
         else:
             self._idata = az.from_json(filename)
 
-            # if dict(filter(lambda item: self.__class__.__name__ not in item[0], self._idata.get('posterior').items())):
-            if self.__class__.__name__ not in list(dict(self._idata.get('posterior')).keys())[0]:
+            if (
+                self.__class__.__name__
+                not in list(dict(self._idata.get("posterior")).keys())[0]
+            ):
                 raise NameError("Incorrect Model Type.")
             else:
                 return self
@@ -245,9 +249,14 @@ class BaseModel(ABC, Generic[SELF]):
         """
         rng = np.random.default_rng()
         return rng.choice(param_array, n_samples, replace=True)
-    
+
     @staticmethod
-    def _check_inputs(frequency: array_like, recency: array_like=None, T:array_like=None, monetary_value:array_like=None) -> None:
+    def _check_inputs(
+        frequency: array_like,
+        recency: array_like = None,
+        T: array_like = None,
+        monetary_value: array_like = None,
+    ) -> None:
         """
         Check validity of inputs.
 
@@ -412,9 +421,11 @@ class PredictMixin(ABC, Generic[SELF]):
                 self._monetary_value,
                 _,
             ) = self._dataframe_parser(rfm_df)
-        
+
             # Inputs were already checked during model fitting, and only need to be checked again if a new rfm_df is provided.
-            self._check_inputs(self._frequency,self._recency, self._T, self._monetary_value)
+            self._check_inputs(
+                self._frequency, self._recency, self._T, self._monetary_value
+            )
 
         # TODO: Add exception handling for method argument.
         predictions = self._quantities_of_interest.get(method)(

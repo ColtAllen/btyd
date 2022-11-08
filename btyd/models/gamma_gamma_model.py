@@ -81,11 +81,11 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         if hyperparams is None:
             self._hyperparams = {
-                "p_prior_alpha": 1.,
-                "p_prior_beta": 1.,
-                "q_prior_alpha": 1.,
+                "p_prior_alpha": 1.0,
+                "p_prior_beta": 1.0,
+                "q_prior_alpha": 1.0,
                 "q_prior_beta": 3,
-                "v_prior_alpha": 1.,
+                "v_prior_alpha": 1.0,
                 "v_prior_beta": 3.5,
             }
         else:
@@ -237,7 +237,13 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         # TODO: Add exception handling for method argument.
         predictions = self._quantities_of_interest.get(method)(
-            self, sample_posterior, posterior_draws, transaction_prediction_model, time, discount_rate, freq
+            self,
+            sample_posterior,
+            posterior_draws,
+            transaction_prediction_model,
+            time,
+            discount_rate,
+            freq,
         )
 
         # TODO: After v0.1.0, add arg to automatically merge to RFM dataframe.
@@ -258,7 +264,7 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         time: int = None,
         discount_rate: float = None,
         freq: str = None,
-        frequency: npt.ArrayLike = None, 
+        frequency: npt.ArrayLike = None,
         monetary_value: npt.ArrayLike = None,
     ) -> np.ndarray:
         """
@@ -294,7 +300,7 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         if monetary_value is None:
             monetary_value = self._monetary_value
 
-        param_arrays = self._unload_params(sample_posterior, posterior_draws) 
+        param_arrays = self._unload_params(sample_posterior, posterior_draws)
 
         if not sample_posterior:
             param_arrays = [
@@ -306,16 +312,16 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         avg_profit_array = []
 
-        for p, q, v in zip(
-            param_arrays[0], param_arrays[1], param_arrays[2]
-        ):
+        for p, q, v in zip(param_arrays[0], param_arrays[1], param_arrays[2]):
 
             # The expected average profit is a weighted average of individual
             # monetary value and the population mean.
             individual_weight = p * frequency / (p * frequency + q - 1)
             population_mean = v * p / (q - 1)
 
-            avg_profit =  (1 - individual_weight) * population_mean + individual_weight * monetary_value
+            avg_profit = (
+                1 - individual_weight
+            ) * population_mean + individual_weight * monetary_value
             avg_profit_array.append(avg_profit)
 
         return np.array(avg_profit_array)
@@ -382,13 +388,16 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
 
         # use the Gamma-Gamma estimates for the monetary_values
         adjusted_monetary_value = self._conditional_expected_average_profit(
-            sample_posterior = sample_posterior, posterior_draws = posterior_draws, frequency = frequency, monetary_value = monetary_value
+            sample_posterior=sample_posterior,
+            posterior_draws=posterior_draws,
+            frequency=frequency,
+            monetary_value=monetary_value,
         )
 
         if sample_posterior:
-            clv = np.zeros((posterior_draws,len(frequency))) # initialize clv as zero
+            clv = np.zeros((posterior_draws, len(frequency)))  # initialize clv as zero
         else:
-            clv = np.zeros((1,len(frequency)))
+            clv = np.zeros((1, len(frequency)))
 
         steps = np.arange(1, time + 1)
         factor = {"W": 4.345, "M": 1.0, "D": 30, "H": 30 * 24}[freq]
@@ -396,12 +405,17 @@ class GammaGammaModel(BaseModel["GammaGammaModel"]):
         for i in steps * factor:
             # since the prediction of number of transactions is cumulative, we have to subtract off the previous periods
             expected_number_of_transactions = transaction_prediction_model._conditional_expected_number_of_purchases_up_to_time(
-                t = i, frequency = frequency, recency = recency, T = T
-            ) - transaction_prediction_model._conditional_expected_number_of_purchases_up_to_time(t = i - factor, frequency = frequency, recency = recency, T = T)
+                t=i, frequency=frequency, recency=recency, T=T
+            ) - transaction_prediction_model._conditional_expected_number_of_purchases_up_to_time(
+                t=i - factor, frequency=frequency, recency=recency, T=T
+            )
             # sum up the CLV estimates of all of the periods and apply discounted cash flow
-            clv = np.add(clv,(adjusted_monetary_value * expected_number_of_transactions) / (
-                1 + discount_rate
-            ) ** (i / factor), out = clv)
+            clv = np.add(
+                clv,
+                (adjusted_monetary_value * expected_number_of_transactions)
+                / (1 + discount_rate) ** (i / factor),
+                out=clv,
+            )
 
         return clv  # return as a series
 
