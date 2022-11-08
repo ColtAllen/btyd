@@ -321,11 +321,11 @@ class TestBetaGeoModel:
 
         assert actual_cols == expected_cols
 
-    def test_save(self, fitted_bgm):
+    def test_save_json(self, fitted_bgm):
         """
         GIVEN a fitted BetaGeoModel object,
-        WHEN self.save_model() is called,
-        THEN the external JSON and CSV files should exist.
+        WHEN self.save_json() is called,
+        THEN the external JSON files should exist.
         """
 
         # Remove saved file if it already exists:
@@ -336,18 +336,18 @@ class TestBetaGeoModel:
         finally:
             assert os.path.isfile("bgnbd.json") == False
 
-            fitted_bgm.save("bgnbd.json")
+            fitted_bgm.save_json("bgnbd.json")
             assert os.path.isfile("bgnbd.json") == True
 
-    def test_load(self, fitted_bgm):
+    def test_load_json(self, fitted_bgm):
         """
         GIVEN fitted and unfitted BetaGeoModel objects,
-        WHEN parameters of the fitted model are loaded from an external JSON and CSV via self.load_model(),
+        WHEN parameters of the fitted model are loaded from an external JSON via self.load_json(),
         THEN InferenceData unloaded parameters should match, raising exceptions otherwise and if predictions attempted without RFM data.
         """
 
         bgm_new = btyd.BetaGeoModel()
-        bgm_new.load("bgnbd.json")
+        bgm_new.load_json("bgnbd.json")
         assert isinstance(bgm_new._idata, az.InferenceData)
         # assert bgm_new._idata.posterior.keys() ==  'sample'
         assert bgm_new._unload_params() == fitted_bgm._unload_params()
