@@ -112,10 +112,6 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
 
         Log-likelihood function to estimate model parameters for entire population of customers.
 
-        This function was originally introduced in equation 6 of [2]_, and reformulated in section 7 of [3]_
-        to avoid numerical errors for customers who have made large numbers of transactions.
-        More information can be found in [4]_.
-
         This is an internal method and not intended to be called directly.
 
         Parameters
@@ -148,9 +144,18 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
         T = at.as_tensor_variable(T)
 
         A_1 = at.gammaln(r + freq) - at.gammaln(r) + r * at.log(alpha)
-        A_2 = at.gammaln(a + b) + at.gammaln(b + freq + 1) - at.gammaln(b) - at.gammaln(a + b + freq + 1)
+        A_2 = (
+            at.gammaln(a + b)
+            + at.gammaln(b + freq + 1)
+            - at.gammaln(b)
+            - at.gammaln(a + b + freq + 1)
+        )
         A_3 = -(r + freq) * at.log(alpha + T)
-        A_4 = at.log(a) - at.log(b + freq) + (r + freq) * (at.log(alpha + T) - at.log(alpha + rec))
+        A_4 = (
+            at.log(a)
+            - at.log(b + freq)
+            + (r + freq) * (at.log(alpha + T) - at.log(alpha + rec))
+        )
 
         loglike = A_1 + A_2 + A_3 + at.logaddexp(A_4, 0)
 
@@ -230,7 +235,9 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
             second_term = 1 - hyp_term * ((alpha + T) / (alpha + t + T)) ** (r + x)
             numerator = first_term * second_term
 
-            denominator = 1 + (a / (b + x)) * ((alpha + T) / (alpha + recency)) ** (r + x)
+            denominator = 1 + (a / (b + x)) * ((alpha + T) / (alpha + recency)) ** (
+                r + x
+            )
 
             cond_n_purchase = numerator / denominator
             cond_n_purchases.append(cond_n_purchase)
@@ -304,7 +311,14 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
         for alpha, r, a, b in zip(
             param_arrays[0], param_arrays[1], param_arrays[2], param_arrays[3]
         ):
-            cond_alive = np.atleast_1d(1.0 / (1 + (a / (b + frequency)) * ((alpha + T) / (alpha + recency)) ** (r + frequency)))
+            cond_alive = np.atleast_1d(
+                1.0
+                / (
+                    1
+                    + (a / (b + frequency))
+                    * ((alpha + T) / (alpha + recency)) ** (r + frequency)
+                )
+            )
             cond_p_alive.append(cond_alive)
 
         return np.array(cond_p_alive)
@@ -359,7 +373,7 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
         ):
 
             hyp = hyp2f1(r, b + 1, a + b, t / (alpha + t))
-        
+
             expected_purchase = b / (a - 1) * (1 - hyp * (alpha / (alpha + t)) ** r)
             expected_purchases.append(expected_purchase)
 
@@ -428,8 +442,14 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
                 * (alpha / (alpha + t)) ** r
                 * (t / (alpha + t)) ** n
             )
-            finite_sum = (gamma(r + _j) / gamma(r) / gamma(_j + 1) * (t / (alpha + t)) ** _j).sum()
-            second_term = beta(a + 1, b + n) / beta(a, b) * (1 - (alpha / (alpha + t)) ** r * finite_sum)
+            finite_sum = (
+                gamma(r + _j) / gamma(r) / gamma(_j + 1) * (t / (alpha + t)) ** _j
+            ).sum()
+            second_term = (
+                beta(a + 1, b + n)
+                / beta(a, b)
+                * (1 - (alpha / (alpha + t)) ** r * finite_sum)
+            )
 
             prob_n_purchase = first_term + second_term
             prob_n_purchases.append(prob_n_purchase)
@@ -462,6 +482,8 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
 
         alpha, r, a, b = self._unload_params()
 
-        self.synthetic_df = modified_beta_geometric_nbd_model(self._T, r, alpha, a, b, size=size)
+        self.synthetic_df = modified_beta_geometric_nbd_model(
+            self._T, r, alpha, a, b, size=size
+        )
 
         return self.synthetic_df

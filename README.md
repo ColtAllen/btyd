@@ -50,6 +50,10 @@ Please create an issue in the [BTYD repository](https://github.com/ColtAllen/bty
        ["Counting Your Customers the Easy Way: An Alternative to the
        Pareto/NBD Model"](http://brucehardie.com/papers/018/fader_et_al_mksc_05.pdf), Marketing Science, 24 (2), 275-84.
 - **Gamma-Gamma** Fader, Peter & G. S. Hardie, Bruce (2013). ["The Gamma-Gamma Model of Monetary Value"](http://www.brucehardie.com/notes/025/gamma_gamma.pdf).
+- **Modified BG/NBD** Batislam, E.P., M. Denizel, A. Filiztekin (2007),
+       "Empirical validation and comparison of models for customer base
+       analysis,"
+       International Journal of Research in Marketing, 24 (3), 201-209.
 
 ## Additional Information
 

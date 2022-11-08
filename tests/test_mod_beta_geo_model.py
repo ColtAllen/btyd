@@ -320,11 +320,11 @@ class TestModBetaGeoModel:
 
         assert actual_cols == expected_cols
 
-    def test_save(self, fitted_mbgm):
+    def test_save_json(self, fitted_mbgm):
         """
         GIVEN a fitted ModBetaGeoModel object,
-        WHEN self.save_model() is called,
-        THEN the external JSON and CSV files should exist.
+        WHEN self.save_json() is called,
+        THEN the external JSON file should exist.
         """
 
         # Remove saved file if it already exists:
@@ -335,18 +335,18 @@ class TestModBetaGeoModel:
         finally:
             assert os.path.isfile("mbgnbd.json") == False
 
-            fitted_mbgm.save("mbgnbd.json")
+            fitted_mbgm.save_json("mbgnbd.json")
             assert os.path.isfile("mbgnbd.json") == True
 
-    def test_load(self, fitted_mbgm):
+    def test_load_json(self, fitted_mbgm):
         """
         GIVEN fitted and unfitted ModBetaGeoModel objects,
-        WHEN parameters of the fitted model are loaded from an external JSON and CSV via self.load_model(),
+        WHEN parameters of the fitted model are loaded from an external JSON via self.load_json(),
         THEN InferenceData unloaded parameters should match, raising exceptions otherwise and if predictions attempted without RFM data.
         """
 
         mbgm_new = btyd.ModBetaGeoModel()
-        mbgm_new.load("mbgnbd.json")
+        mbgm_new.load_json("mbgnbd.json")
         assert isinstance(mbgm_new._idata, az.InferenceData)
         # assert mbgm_new._idata.posterior.keys() ==  'sample'
         assert mbgm_new._unload_params() == fitted_mbgm._unload_params()

@@ -325,7 +325,7 @@ class TestBetaGeoModel:
         """
         GIVEN a fitted BetaGeoModel object,
         WHEN self.save_json() is called,
-        THEN the external JSON files should exist.
+        THEN the external JSON file should exist.
         """
 
         # Remove saved file if it already exists:
