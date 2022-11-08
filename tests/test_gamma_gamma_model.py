@@ -256,10 +256,10 @@ class TestGammaGammaModel:
         assert isinstance(array_out, instance)
         assert len(array_out) == draws
 
-    def test_save(self, fitted_ggm):
+    def test_save_json(self, fitted_ggm):
         """
         GIVEN a fitted GammaGammaModel object,
-        WHEN self.save_model() is called,
+        WHEN self.save_json() is called,
         THEN the external JSON file should exist.
         """
 
@@ -271,18 +271,18 @@ class TestGammaGammaModel:
         finally:
             assert os.path.isfile("ggm.json") == False
 
-            fitted_ggm.save("ggm.json")
+            fitted_ggm.save_json("ggm.json")
             assert os.path.isfile("ggm.json") == True
 
-    def test_load(self, fitted_ggm):
+    def test_load_json(self, fitted_ggm):
         """
         GIVEN fitted and unfitted GammaGammaModel objects,
-        WHEN parameters of the fitted model are loaded from an external JSON  via self.load_model(),
+        WHEN parameters of the fitted model are loaded from an external JSON  via self.load_json(),
         THEN InferenceData unloaded parameters should match, raising exceptions otherwise and if predictions attempted without RFM data.
         """
 
         ggm_new = btyd.GammaGammaModel()
-        ggm_new.load("ggm.json")
+        ggm_new.load_json("ggm.json")
         assert isinstance(ggm_new._idata, az.InferenceData)
         # assert ggm_new._idata.posterior.keys() ==  'sample'
         assert ggm_new._unload_params() == fitted_ggm._unload_params()

@@ -324,8 +324,8 @@ class TestBetaGeoModel:
     def test_save_json(self, fitted_bgm):
         """
         GIVEN a fitted BetaGeoModel object,
-        WHEN self.save_model() is called,
-        THEN the external JSON and CSV files should exist.
+        WHEN self.save_json() is called,
+        THEN the external JSON files should exist.
         """
 
         # Remove saved file if it already exists:
@@ -342,7 +342,7 @@ class TestBetaGeoModel:
     def test_load_json(self, fitted_bgm):
         """
         GIVEN fitted and unfitted BetaGeoModel objects,
-        WHEN parameters of the fitted model are loaded from an external JSON and CSV via self.load_model(),
+        WHEN parameters of the fitted model are loaded from an external JSON via self.load_json(),
         THEN InferenceData unloaded parameters should match, raising exceptions otherwise and if predictions attempted without RFM data.
         """
 

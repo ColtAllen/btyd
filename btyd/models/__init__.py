@@ -154,7 +154,7 @@ class BaseModel(ABC, Generic[SELF]):
 
     def save_json(self, filename: str) -> None:
         """
-        Dump InferenceData from fitted model into a JSON or CSV file. Format is inferred from the filename.
+        Dump InferenceData from fitted model into a JSON file.
 
         Parameters
         ----------
@@ -169,7 +169,7 @@ class BaseModel(ABC, Generic[SELF]):
 
     def load_json(self, filename: str) -> SELF:
         """
-        Load InferenceData from an external file. As of 0.1beta1 only JSON files are supported.
+        Load InferenceData from an external file.
 
         Parameters
         ----------
@@ -187,7 +187,8 @@ class BaseModel(ABC, Generic[SELF]):
         else:
             self._idata = az.from_json(filename)
 
-            if dict(filter(lambda item: self.__class__.__name__ not in item[0], self._idata.get('posterior').items())):
+            # if dict(filter(lambda item: self.__class__.__name__ not in item[0], self._idata.get('posterior').items())):
+            if self.__class__.__name__ not in list(dict(self._idata.get('posterior')).keys())[0]:
                 raise NameError("Incorrect Model Type.")
             else:
                 return self
