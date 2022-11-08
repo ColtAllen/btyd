@@ -152,7 +152,7 @@ class BaseModel(ABC, Generic[SELF]):
                 ]
             )
 
-    def save(self, filename: str) -> None:
+    def save_json(self, filename: str) -> None:
         """
         Dump InferenceData from fitted model into a JSON or CSV file. Format is inferred from the filename.
 
@@ -162,13 +162,12 @@ class BaseModel(ABC, Generic[SELF]):
             Path and/or filename where model data will be saved.
         """
 
-        if ".json" in filename:
+        if ".json" not in filename:
+            raise TypeError("Only JSON file types are supported.")
+        else:
             self._idata.to_json(filename)
-        elif ".csv" in filename:
-            df = self._idata.to_dataframe()  # include_index=False)
-            df.to_csv(filename)  # ,index=False)
 
-    def load(self, filename: str) -> SELF:
+    def load_json(self, filename: str) -> SELF:
         """
         Load InferenceData from an external file. As of 0.1beta1 only JSON files are supported.
 
@@ -183,23 +182,17 @@ class BaseModel(ABC, Generic[SELF]):
             Model object containing ``_idata`` attribute for model evaluation and predictions.
         """
 
-        if ".json" in filename:
+        if ".json" not in filename:
+            raise TypeError("Only JSON file types are supported.")
+        else:
             self._idata = az.from_json(filename)
-        # TODO: CSV loadings currently encountering issues.
-        # elif '.csv' in filename:
-        #     df = pd.read_csv(filename).to_dict()
-        #     self._idata = az.from_dict(df)
-        # xdata = xr.Dataset.from_dataframe(df)
-        # self._idata = az.convert_to_inference_data(xdata)
 
-        # BETA TODO: Raise BTYDException.
-        # if dict(filter(lambda item: self.__class__.__name__ not in item[0], self._idata.posterior.get('data_vars').items()))
-        # raise BTYDException
+            if dict(filter(lambda item: self.__class__.__name__ not in item[0], self._idata.get('posterior').items())):
+                raise NameError("Incorrect Model Type.")
+            else:
+                return self
 
-        return self
-
-    @staticmethod
-    def _dataframe_parser(rfm_df: pd.DataFrame) -> Tuple[np.ndarray]:
+    def _dataframe_parser(self, rfm_df: pd.DataFrame) -> Tuple[np.ndarray]:
         """
         Parse input dataframe into separate RFM components. This is an internal method and not intended to be called directly.
 
@@ -225,7 +218,7 @@ class BaseModel(ABC, Generic[SELF]):
         recency = rfm_df["RECENCY"].values
         T = rfm_df["T"].values
 
-        if "MONETARY_VALUE" in rfm_df.columns:
+        if self.__class__.__name__ == "GammaGammaModel":
             monetary_value = rfm_df["MONETARY_VALUE"].values
         else:
             monetary_value = None
@@ -252,7 +245,8 @@ class BaseModel(ABC, Generic[SELF]):
         rng = np.random.default_rng()
         return rng.choice(param_array, n_samples, replace=True)
     
-    def _check_inputs(self, frequency: array_like, recency: array_like=None, T:array_like=None, monetary_value:array_like=None) -> None:
+    @staticmethod
+    def _check_inputs(frequency: array_like, recency: array_like=None, T:array_like=None, monetary_value:array_like=None) -> None:
         """
         Check validity of inputs.
 
@@ -305,7 +299,7 @@ class BaseModel(ABC, Generic[SELF]):
                 )
         if np.sum((frequency - frequency.astype(int)) ** 2) != 0:
             raise ValueError("There exist non-integer values in the frequency vector.")
-        if self.__class__.__name__ == "GammaGammaModel":
+        if monetary_value is not None:
             if np.any(monetary_value <= 0):
                 raise ValueError(
                     "There exist non-positive (<= 0) values in the monetary_value vector."

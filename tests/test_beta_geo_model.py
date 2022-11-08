@@ -321,7 +321,7 @@ class TestBetaGeoModel:
 
         assert actual_cols == expected_cols
 
-    def test_save(self, fitted_bgm):
+    def test_save_json(self, fitted_bgm):
         """
         GIVEN a fitted BetaGeoModel object,
         WHEN self.save_model() is called,
@@ -336,10 +336,10 @@ class TestBetaGeoModel:
         finally:
             assert os.path.isfile("bgnbd.json") == False
 
-            fitted_bgm.save("bgnbd.json")
+            fitted_bgm.save_json("bgnbd.json")
             assert os.path.isfile("bgnbd.json") == True
 
-    def test_load(self, fitted_bgm):
+    def test_load_json(self, fitted_bgm):
         """
         GIVEN fitted and unfitted BetaGeoModel objects,
         WHEN parameters of the fitted model are loaded from an external JSON and CSV via self.load_model(),
@@ -347,7 +347,7 @@ class TestBetaGeoModel:
         """
 
         bgm_new = btyd.BetaGeoModel()
-        bgm_new.load("bgnbd.json")
+        bgm_new.load_json("bgnbd.json")
         assert isinstance(bgm_new._idata, az.InferenceData)
         # assert bgm_new._idata.posterior.keys() ==  'sample'
         assert bgm_new._unload_params() == fitted_bgm._unload_params()

@@ -105,7 +105,7 @@ class TestBaseModel:
         THEN five numpy arrays should be returned.
         """
 
-        parsed = BaseModel._dataframe_parser(cdnow)
+        parsed = BaseModel()._dataframe_parser(cdnow)
         assert len(parsed) == 5
 
     def test_check_inputs(self):
@@ -120,26 +120,64 @@ class TestBaseModel:
         T = np.array([5, 6, 15])
         monetary_value = np.array([2.3, 490, 33.33])
         assert (
-            BaseModel()._check_inputs(frequency, recency, T, monetary_value) is None
+            BaseModel._check_inputs(frequency, recency, T) is None
         )
 
         with pytest.raises(ValueError):
             bad_recency = T + 1
-            BaseModel()._check_inputs(frequency, bad_recency, T)
+            BaseModel._check_inputs(frequency, bad_recency, T)
 
         with pytest.raises(ValueError):
             bad_recency = recency.copy()
             bad_recency[0] = 1
-            BaseModel()._check_inputs(frequency, bad_recency, T)
+            BaseModel._check_inputs(frequency, bad_recency, T)
 
         with pytest.raises(ValueError):
             bad_freq = np.array([0, 0.5, 2])
-            BaseModel()._check_inputs(bad_freq, recency, T)
+            BaseModel._check_inputs(bad_freq, recency, T)
 
-        # with pytest.raises(ValueError):
-        #     bad_monetary_value = monetary_value.copy()
-        #     bad_monetary_value[0] = 0
-        #     BaseModel()._check_inputs(frequency, recency, T, bad_monetary_value)
+        with pytest.raises(ValueError):
+            # Non-positive frequencies should raise an error if monetary_values are provided:
+            BaseModel._check_inputs(frequency, recency, T, monetary_value)
+            bad_monetary_value = monetary_value.copy()
+            bad_monetary_value[0] = 0
+            # Positive frequencies must be provided to raise exception for non-positive monetary_values:
+            bad_freq = np.array([1, 2, 3])
+            BaseModel._check_inputs(frequency, recency, T, bad_monetary_value)
+    
+    def test_save_json(self):
+        """
+        GIVEN an instantiated BaseModel object,
+        WHEN save_json() is called with an invalid filename,
+        THEN a TypeError should be raised.
+        """
+
+        with pytest.raises(TypeError):
+            BaseModel().save_json("model.csv")
+    
+    def test_load_json(self, fitted_bgm):
+        """
+        GIVEN an instantiated BaseModel object,
+        WHEN load_json() is called on an invalid filename and persisted BetaGeoModel,
+        THEN a TypeError and NameError should be raised, respectively.
+        """
+
+        with pytest.raises(TypeError):
+            BaseModel().save_json("model.csv")
+        
+        with pytest.raises(NameError):
+
+            # Remove saved file if it already exists:
+            try:
+                os.remove("bgnbd.json")
+            except FileNotFoundError:
+                pass
+
+            fitted_bgm.save_json("bgnbd.json")
+            BaseModel().load_json("bgnbd.json")
+
+            os.remove("bgnbd.json")
+
 
 
 class TestPredictMixin:
