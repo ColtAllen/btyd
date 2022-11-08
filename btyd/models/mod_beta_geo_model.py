@@ -112,10 +112,6 @@ class ModBetaGeoModel(BetaGeoModel["ModBetaGeoModel"]):
 
         Log-likelihood function to estimate model parameters for entire population of customers.
 
-        This function was originally introduced in equation 6 of [2]_, and reformulated in section 7 of [3]_
-        to avoid numerical errors for customers who have made large numbers of transactions.
-        More information can be found in [4]_.
-
         This is an internal method and not intended to be called directly.
 
         Parameters
