@@ -1,5 +1,15 @@
 # Changelog
 
+### 0.1beta3
+- `ModBetaGeoModel` Bayesian implementation of Modified BG/NBD model added.
+- Added `conditional_probability_of_being_alive_up_to_time` to `ParetoNBDFitter`.
+- Removed CSV model persistence and added a validation check for loading models from JSON files.
+- Removed `dill` dependency for persisting `fitters` models.
+- Converted `_check_inputs` into a static method and added a validation check for 'frequency < T'.
+- Converted `_dataframe_parser` from a static method and removed unnecessary `_check_inputs` call.
+- Removed direct imports for `BaseModel` and `PredictMixin`.
+
+
 ### 0.1beta2
 - `GammaGammaModel` Bayesian implementation of Gamma-Gamma model added.
 - Input validation added to `BaseModel` class.
