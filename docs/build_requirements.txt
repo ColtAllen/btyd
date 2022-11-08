@@ -1,6 +1,5 @@
 sphinxcontrib-napoleon>=0.7
 myst-parser>=0.18.0
 pydata-sphinx-theme>=0.9.0
-dill==0.3.5.1
 pymc==4.0.0
 autograd==1.4
