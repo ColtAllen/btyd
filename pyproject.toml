@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "btyd"
-version = "0.1b2"
+version = "0.1b3"
 description = "Buy Till You Die and Customer Lifetime Value statistical models in Python."
 authors = ["Colt Allen"]
 license = "Apache 2.0"
