@@ -44,7 +44,7 @@ class TestGammaGammaModel:
         )
         assert repr(btyd.GammaGammaModel()) == "<btyd.GammaGammaModel>"
 
-        # Expected parameters may vary slightly due to rounding errors.
+        # Expected parameters may vary slightly due to rounding errors and training on a small dataset.
         expected = [
             "<btyd.GammaGammaModel: Parameters {'p': 6.3, 'q': 3.7, 'v': 15.8} estimated with 946 customers.>",
             "<btyd.GammaGammaModel: Parameters {'p': 6.3, 'q': 3.7, 'v': 15.7} estimated with 946 customers.>",
@@ -53,6 +53,7 @@ class TestGammaGammaModel:
             "<btyd.GammaGammaModel: Parameters {'p': 6.4, 'q': 3.7, 'v': 15.5} estimated with 946 customers.>",
             "<btyd.GammaGammaModel: Parameters {'p': 6.4, 'q': 3.7, 'v': 15.4} estimated with 946 customers.>",
             "<btyd.GammaGammaModel: Parameters {'p': 6.2, 'q': 3.7, 'v': 15.9} estimated with 946 customers.>",
+            "<btyd.GammaGammaModel: Parameters {'p': 6.2, 'q': 3.7, 'v': 15.8} estimated with 946 customers.>"
         ]
         assert repr(fitted_ggm) in expected
 
