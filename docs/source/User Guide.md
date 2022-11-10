@@ -246,7 +246,7 @@ frequency             0.113884   1.000000
 Transaction frequencies and monetary values are uncorrelated; we can now train our Gamma-Gamma submodel and predict the conditional, expected average lifetime values of our customers:
 
 ```python
-from btyd import GammaGammaModels
+from btyd import GammaGammaModel
 
 ggm = GammaGammaModel()
 ggm.fit(returning_customers_summary)
