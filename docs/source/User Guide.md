@@ -33,10 +33,10 @@ For models using covariates, additional columns may be added.
 We'll use the **BG/NBD model** first. There are other models which we will explore in these docs, but this is the simplest to start with.
 
 ```python
-from btyd import BetaGeoFitter
+from btyd import BetaGeoModel
 
 # Similar API to scikit-learn.
-bgm = BetaGeoFitter().fit(data)
+bgm = BetaGeoModel().fit(data)
 print(bgm)
 """
 <btyd.BetaGeoModel: Parameters {'alpha': 4.5, 'r': 0.2, 'a': 0.8, 'b': 2.4} estimated with 2357 customers.>
