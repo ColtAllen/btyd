@@ -7,7 +7,7 @@
 
 ## READ FIRST: Project Status
 
-Development has transitioned to a new project repo: [pymc-marketing](https://github.com/ColtAllen/pymc-marketing).
+Development has transitioned to a new project repo: [pymc-marketing](https://github.com/pymc-labs/pymc-marketing).
 
 ## Introduction
 
