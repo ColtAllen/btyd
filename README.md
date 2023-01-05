@@ -1,16 +1,17 @@
 # BTYD
 
-[![Actively Maintained](https://img.shields.io/badge/Development%20Status-Active%20-yellowgreen.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
+[![Actively Maintained](https://img.shields.io/badge/Development%20Status-Transitioned%20-yellowgreen.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
 [![PyPI version](https://badge.fury.io/py/btyd.svg)](https://badge.fury.io/py/btyd)
 [![GitHub license](https://img.shields.io/github/license/ColtAllen/btyd)](https://github.com/ColtAllen/btyd/blob/master/LICENSE.txt)
 
 
 ## READ FIRST: Project Status
 
-BTYD is the successor to the [Lifetimes](https://github.com/CamDavidsonPilon/lifetimes) library for implementing Buy Till You Die and Customer Lifetime Value statistical models in Python. All existing Lifetimes functionality is supported, and Bayesian [PyMC](https://github.com/pymc-devs) model implementations are now in Beta.
-
+Development has transitioned to a new project repo: [pymc-marketing](https://github.com/ColtAllen/pymc-marketing).
 
 ## Introduction
+
+BTYD is the successor to the [Lifetimes](https://github.com/CamDavidsonPilon/lifetimes) library for implementing Buy Till You Die and Customer Lifetime Value statistical models in Python. All existing Lifetimes functionality is supported, and Bayesian [PyMC](https://github.com/pymc-devs) model variants are also supported.
 
 BTYD can be used to analyze your users based on the following assumptions:
 
